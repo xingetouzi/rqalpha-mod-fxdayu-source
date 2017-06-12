@@ -1,14 +1,15 @@
-#rqalpha mongodb datasource插件，支持分钟级别数据
+# rqalpha mongodb datasource插件，支持分钟级别数据
 
-##安装步骤
+## 安装步骤
 1.进入项目文件保存目录,用git拉取项目文件,
+
 ```git clone https://github.com/xingetouzi/rqalpha-mod-mongo-datasource.git```
 
 2.切换到对应安装有rqalpha的python虚拟环境
 
 3.运行```rqalpha mod install -e .```
 
-##配置选项：
+## 配置选项：
 | 选项 | 默认值 | 说明 |
 | --- | :--: | --- |
 | mongo\_datasource.enabled | True | 插件开关 |
@@ -17,6 +18,7 @@
 | mongo\_datasource.cache_length | 1000 | 当开启缓存优化时，指定缓存的大小 |
 
 ## 示例配置
+
 ```
 config = {
     "base": {
