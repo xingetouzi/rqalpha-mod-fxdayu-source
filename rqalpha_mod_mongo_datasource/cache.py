@@ -78,13 +78,17 @@ class CacheMixin(object):
     ALLOW_CACHE = {"m", "d", "h"}
 
     def __init__(self):
-        self._caches = {tf: Cache(self, self.CHUNK_LENGTH, tf) for tf in self.ALLOW_CACHE}
+        self._caches = None
         self.get_bar = self.get_bar_decorator(self.get_bar)
         self.history_bars = self.history_bars_decorator(self.history_bars)
+        self.init_cache()
 
     @classmethod
     def set_cache_length(cls, value):
         cls.CHUNK_LENGTH = value
+
+    def init_cache(self):
+        self._caches = {tf: Cache(self, self.CHUNK_LENGTH, tf) for tf in self.ALLOW_CACHE}
 
     def get_new_cache(self, instrument, frequency, dt, count):
         raise NotImplementedError

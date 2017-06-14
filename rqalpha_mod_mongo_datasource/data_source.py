@@ -24,17 +24,36 @@ class MongoConverter(object):
     def convert(df, fields=None):
         if fields is None:
             fields = ["datetime", "open", "high", "low", "close", "volume"]
-        dt = df["datetime"]
-        df["datetime"] = np.empty(len(df), dtype=np.uint64)
-        dtype = np.dtype([('datetime', np.uint64)] +
-                         [(f, StockBarConverter.field_type(f, df[f].dtype))
-                          for f in fields if f != "datetime"])
-        result = df[fields].values.ravel().view(dtype=dtype)
-        result["datetime"] = dt.apply(lambda x: convert_dt_to_int(x))
-        return result
+        dtypes = [(f, StockBarConverter.field_type(f, df[f].dtype)) if f != "datetime" else ('datetime', np.uint64)
+                  for f in fields]
+        if "datetime" in fields:
+            dt = df["datetime"]
+            df["datetime"] = np.empty(len(df), dtype=np.uint64)
+        result = df[fields].values.ravel().view(dtype=np.dtype(dtypes))
+        if "datetime" in fields:
+            result["datetime"] = dt.apply(lambda x: convert_dt_to_int(x))
+        return result[fields]
 
 
-class MongoDataSource(BaseDataSource):
+class Singleton(type):
+    SINGLETON_ENABLED = True
+
+    def __init__(cls, *args, **kwargs):
+        cls._instance = None
+        super(Singleton, cls).__init__(*args, **kwargs)
+
+    def __call__(cls, *args, **kwargs):
+        if cls.SINGLETON_ENABLED:
+            if cls._instance is None:
+                cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
+                return cls._instance
+            else:
+                return cls._instance
+        else:
+            return super(Singleton, cls).__call__(*args, **kwargs)
+
+
+class MongoDataSource(BaseDataSource, metaclass=Singleton):
     def __init__(self, path, mongo_url):
         super(MongoDataSource, self).__init__(path)
         from rqalpha_mod_mongo_datasource.mongo_handler import MongoHandler
@@ -75,10 +94,10 @@ class MongoDataSource(BaseDataSource):
         data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length).reset_index()
         if data is not None:
             if fields is not None:
-                if isinstance(fields, six.string_types):
-                    fields = [fields]
-                fields = [field for field in fields if field in data.columns]
-            return MongoConverter.convert(data, fields)
+                if not isinstance(fields, six.string_types):
+                    fields = [field for field in fields if field in data.columns]
+            data = MongoConverter.convert(data)
+            return data if fields is None else data[fields]
 
     def _get_date_range(self, frequency):
         db = self._get_db(INSTRUMENT_TYPE.CS, frequency)
