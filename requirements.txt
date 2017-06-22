@@ -2,3 +2,4 @@ rqalpha>=2.2.5
 pymongo>=3.3.0
 numpy>=1.11.1
 pandas>=0.18.1
+lru_dict>=1.1.6

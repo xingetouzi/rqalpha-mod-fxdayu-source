@@ -5,7 +5,6 @@ import pymongo
 
 
 class DataHandler(object):
-
     def write(self, *args, **kwargs):
         pass
 
@@ -122,12 +121,11 @@ class MongoHandler(DataHandler):
             if value < 0:
                 data.reverse()
         data = pd.DataFrame(data)
+        if not data.size:
+            return data
         if index:
             data.index = data.pop(index)
-
-        if len(data):
-            data.pop('_id')
-
+        data.pop('_id')
         return data
 
     def inplace(self, data, collection, db=None, index='datetime'):

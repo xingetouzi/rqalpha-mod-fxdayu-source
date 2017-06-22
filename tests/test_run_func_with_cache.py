@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
 import time
-from rqalpha.api import *
+import pandas as pd
+
 from rqalpha import run_func
+from rqalpha.api import *
+from rqalpha.utils.datetime_func import convert_int_to_datetime
+from rqalpha.utils.logger import user_system_log
 
 
 def init(context):
@@ -17,9 +20,12 @@ def before_trading(context):
 
 
 def handle_bar(context, bar_dict):
-    print(bar_dict[context.s1])
+    # print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
-    print(pd.DataFrame(history_bars(context.s1, 5, "1m")))
+    data = pd.DataFrame(history_bars(context.s1, 5, "5m", include_now=True))
+    data.set_index(data["datetime"].map(convert_int_to_datetime), inplace=True)
+    print(context.now)
+    # print(data)
     if not context.fired:
         # order_percent并且传入1代表买入该股票并且使其占有投资组合的100%
         order_percent(context.s1, 1)
@@ -53,7 +59,8 @@ config = {
         "mongo_datasource": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.103:30000",
-            "enable_cache": False
+            "enable_cache": True,
+            "cache_length": 10000
         }
     }
 }

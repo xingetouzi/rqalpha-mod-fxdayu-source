@@ -1,38 +1,23 @@
 # encoding: utf-8
 import re
-import functools
 from datetime import date
 
-import numpy as np
 import six
 from dateutil.relativedelta import relativedelta
 from rqalpha.const import INSTRUMENT_TYPE
 from rqalpha.data.base_data_source import BaseDataSource
-from rqalpha.data.converter import StockBarConverter
-from rqalpha.utils.datetime_func import convert_dt_to_int, convert_int_to_datetime
+from rqalpha.model.instrument import Instrument
+from rqalpha.utils.datetime_func import convert_dt_to_int
+from rqalpha.utils.py2 import lru_cache
 
-from .cache import CacheMixin
+from rqalpha_mod_mongo_datasource.module.cache import CacheMixin
+from rqalpha_mod_mongo_datasource.module.odd import OddFrequencyDataSource
+from rqalpha_mod_mongo_datasource.utils import DataFrameConverter
 
 INSTRUMENT_TYPE_MAP = {
     INSTRUMENT_TYPE.CS: "stock",
     INSTRUMENT_TYPE.INDX: "stock",
 }
-
-
-class MongoConverter(object):
-    @staticmethod
-    def convert(df, fields=None):
-        if fields is None:
-            fields = ["datetime", "open", "high", "low", "close", "volume"]
-        dtypes = [(f, StockBarConverter.field_type(f, df[f].dtype)) if f != "datetime" else ('datetime', np.uint64)
-                  for f in fields]
-        if "datetime" in fields:
-            dt = df["datetime"]
-            df["datetime"] = np.empty(len(df), dtype=np.uint64)
-        result = df[fields].values.ravel().view(dtype=np.dtype(dtypes))
-        if "datetime" in fields:
-            result["datetime"] = dt.apply(lambda x: convert_dt_to_int(x))
-        return result[fields]
 
 
 class Singleton(type):
@@ -53,7 +38,13 @@ class Singleton(type):
             return super(Singleton, cls).__call__(*args, **kwargs)
 
 
-class MongoDataSource(BaseDataSource, metaclass=Singleton):
+class NoneDataError(BaseException):
+    pass
+
+
+class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
+    __metaclass__ = Singleton
+
     def __init__(self, path, mongo_url):
         super(MongoDataSource, self).__init__(path)
         from rqalpha_mod_mongo_datasource.mongo_handler import MongoHandler
@@ -65,15 +56,16 @@ class MongoDataSource(BaseDataSource, metaclass=Singleton):
         dct = {item["type"]: item["map"] for item in map_}
         return dct
 
-    def _get_db(self, instrument_type, frequency):
+    def _get_db(self, instrument, frequency):
         try:
+            if isinstance(instrument, Instrument):
+                instrument_type = instrument.enum_type
+            else:
+                instrument_type = instrument
             type_ = INSTRUMENT_TYPE_MAP[instrument_type]
-            time_frame = re.findall("[0-9]*(.+)", frequency)[0]
-            return self._db_map[type_][time_frame]
+            return self._db_map[type_][frequency]
         except KeyError:
-            raise RuntimeWarning("MongoDB 中没有对应品种数据")
-        except IndexError:
-            raise RuntimeWarning("MongoDB 不支持的time_frame")
+            raise NoneDataError("MongoDB 中没有品种%s的%s数据" % (instrument.order_book_id, frequency))
 
     @staticmethod
     def _get_code(instrument):
@@ -87,17 +79,34 @@ class MongoDataSource(BaseDataSource, metaclass=Singleton):
                 code = "sh" + code
         return code
 
-    def _get_k_data(self, instrument, frequency, fields=None, start_dt=None, end_dt=None, length=None):
+    def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
         # 转换到自建mongodb结构
         code = self._get_code(instrument)
-        db = self._get_db(instrument.enum_type, frequency)
+        db = self._get_db(instrument, frequency)
         data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length).reset_index()
-        if data is not None:
-            if fields is not None:
-                if not isinstance(fields, six.string_types):
-                    fields = [field for field in fields if field in data.columns]
-            data = MongoConverter.convert(data)
-            return data if fields is None else data[fields]
+        if data is not None and data.size:
+            return DataFrameConverter.df2np(data)
+
+    def is_base_frequency(self, instrument, frequency):
+        if isinstance(instrument, Instrument):
+            instrument_type = instrument.enum_type
+        else:
+            instrument_type = instrument
+        type_ = INSTRUMENT_TYPE_MAP[instrument_type]
+        return type_ in self._db_map and frequency in self._db_map[type_]
+
+    def get_bar(self, instrument, dt, frequency):
+        if frequency in {'1d'}:  # 日线从默认数据源拿
+            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
+        bar_data = self.raw_history_bars(instrument, frequency, end_dt=dt, length=1)
+        if bar_data is None or not bar_data.size:
+            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
+        else:
+            dti = convert_dt_to_int(dt)
+            return bar_data[0] if bar_data[0]["datetime"] == dti else None
+
+    def current_snapshot(self, instrument, frequency, dt):
+        pass
 
     def _get_date_range(self, frequency):
         db = self._get_db(INSTRUMENT_TYPE.CS, frequency)
@@ -111,27 +120,7 @@ class MongoDataSource(BaseDataSource, metaclass=Singleton):
             raise RuntimeError("无法从MongoDb获取数据时间范围")
         return start.date(), end.date()
 
-    def get_bar(self, instrument, dt, frequency):
-        if frequency in {'1d'}:  # 日线从默认数据源拿
-            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
-        bar_data = self._get_k_data(instrument, frequency, end_dt=dt, length=1)
-        if bar_data is None or not bar_data.size:
-            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
-        else:
-            return bar_data[0]
-
-    def history_bars(self, instrument, bar_count, frequency, fields, dt, skip_suspended=True, **kwargs):
-        # TODO include_now = True
-        bar_data = self._get_k_data(instrument, frequency, fields, end_dt=dt, length=bar_count)
-        if bar_data is None or not bar_data.size:
-            return super(MongoDataSource, self).history_bars(self, instrument, bar_count, frequency, fields, dt,
-                                                             skip_suspended, **kwargs)
-        else:
-            return bar_data
-
-    def current_snapshot(self, instrument, frequency, dt):
-        pass
-
+    @lru_cache(maxsize=10)
     def available_data_range(self, frequency):
         if frequency.endswith("d"):
             return date(2012, 6, 1), date.today() - relativedelta(days=1)
@@ -139,15 +128,10 @@ class MongoDataSource(BaseDataSource, metaclass=Singleton):
 
 
 class MongoCacheDataSource(MongoDataSource, CacheMixin):
-    def __init__(self, path, mongo_url, cache_length=CacheMixin.CHUNK_LENGTH):
+    def __init__(self, path, mongo_url):
         MongoDataSource.__init__(self, path, mongo_url)
-        CacheMixin.set_cache_length(cache_length)
         CacheMixin.__init__(self)
 
     def get_new_cache(self, instrument, frequency, dt, count):
-        result = self._get_k_data(instrument, frequency, start_dt=dt, length=count + 1)
-        dti = convert_dt_to_int(dt)
-        if result["datetime"][0] == dti:
-            return result[1:]
-        else:
-            return result[:count]
+        bar_data = super(MongoCacheDataSource, self).raw_history_bars(instrument, frequency, start_dt=dt, length=count)
+        return bar_data
