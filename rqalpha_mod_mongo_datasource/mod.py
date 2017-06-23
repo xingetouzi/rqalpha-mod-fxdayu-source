@@ -3,6 +3,7 @@
 from rqalpha.interface import AbstractMod
 
 from rqalpha_mod_mongo_datasource.data_source import MongoDataSource, MongoCacheDataSource
+from rqalpha_mod_mongo_datasource.event_source import IntervalEventSource
 
 
 class MongoDataMod(AbstractMod):
@@ -17,11 +18,13 @@ class MongoDataMod(AbstractMod):
                 MongoCacheDataSource.set_cache_length(int(mod_config.cache_length))
             if mod_config.max_cache_space:
                 MongoCacheDataSource.set_cache_length(int(mod_config.cache_length))
-            source = MongoCacheDataSource(env.config.base.data_bundle_path, mongo_url)
-            source.init_cache()  # 为了支持单例模式下多次运行
+            data_source = MongoCacheDataSource(env.config.base.data_bundle_path, mongo_url)
+            data_source.init_cache()  # 为了支持单例模式下多次运行
         else:
-            source = MongoDataSource(env.config.base.data_bundle_path, mongo_url)
-        env.set_data_source(source)
+            data_source = MongoDataSource(env.config.base.data_bundle_path, mongo_url)
+        event_source = IntervalEventSource(env, env.config.base.account_list)
+        env.set_data_source(data_source)
+        env.set_event_source(event_source)
 
     def tear_down(self, code, exception=None):
         MongoCacheDataSource.set_cache_length(self._old_cache_length)
