@@ -3,6 +3,7 @@ __config__ = {
     "enable_cache": False,
     "cache_length": None,
     "max_cache_space": None,
+    "priority": 200,
 }
 
 

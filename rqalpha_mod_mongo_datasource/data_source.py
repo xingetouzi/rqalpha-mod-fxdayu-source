@@ -65,23 +65,12 @@ class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
             type_ = INSTRUMENT_TYPE_MAP[instrument_type]
             return self._db_map[type_][frequency]
         except KeyError:
-            raise NoneDataError("MongoDB 中没有品种%s的%s数据" % (instrument.order_book_id, frequency))
-
-    @staticmethod
-    def _get_code(instrument):
-        order_book_id = instrument.order_book_id
-        code = order_book_id.split(".")[0]
-        if instrument.enum_type in {INSTRUMENT_TYPE.CS, INSTRUMENT_TYPE.INDX}:
-            # 由数据库里的collection名确定
-            if code[0] in {"0", "3"}:
-                code = "sz" + code
-            elif code[0] in {"6"}:
-                code = "sh" + code
-        return code
+            message = instrument.order_book_id if isinstance(instrument, Instrument) else instrument
+            raise NoneDataError("MongoDB 中没有品种%s的%s数据" % (message, frequency))
 
     def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
         # 转换到自建mongodb结构
-        code = self._get_code(instrument)
+        code = instrument.order_book_id
         db = self._get_db(instrument, frequency)
         data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length).reset_index()
         if data is not None and data.size:
@@ -95,26 +84,19 @@ class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
         type_ = INSTRUMENT_TYPE_MAP[instrument_type]
         return type_ in self._db_map and frequency in self._db_map[type_]
 
-    def get_bar(self, instrument, dt, frequency):
-        if frequency in {'1d'}:  # 日线从默认数据源拿
-            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
-        bar_data = self.raw_history_bars(instrument, frequency, end_dt=dt, length=1)
-        if bar_data is None or not bar_data.size:
-            return super(MongoDataSource, self).get_bar(instrument, dt, frequency)
-        else:
-            dti = convert_dt_to_int(dt)
-            return bar_data[0] if bar_data[0]["datetime"] == dti else None
-
     def current_snapshot(self, instrument, frequency, dt):
         pass
 
     def _get_date_range(self, frequency):
-        db = self._get_db(INSTRUMENT_TYPE.CS, frequency)
-        from pymongo import DESCENDING
         try:
-            start = self._handler.client.get_database(db).get_collection("sh600000").find() \
+            db = self._get_db(INSTRUMENT_TYPE.CS, frequency)
+        except NoneDataError:
+            db = self._get_db(INSTRUMENT_TYPE.CS, "1" + frequency[-1])
+            from pymongo import DESCENDING
+        try:
+            start = self._handler.client.get_database(db).get_collection("600000.XSHG").find() \
                 .sort("_id").limit(1)[0]["datetime"]
-            end = self._handler.client.get_database(db).get_collection("sh600000").find() \
+            end = self._handler.client.get_database(db).get_collection("600000.XSHG").find() \
                 .sort("_id", direction=DESCENDING).limit(1)[0]["datetime"]
         except IndexError:
             raise RuntimeError("无法从MongoDb获取数据时间范围")

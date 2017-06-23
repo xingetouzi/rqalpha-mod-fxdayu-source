@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from rqalpha.const import ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
-from rqalpha.interface import AbstractEventSource
 from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import SimulationEventSource
 from rqalpha.utils import get_account_type
 from rqalpha.utils.datetime_func import convert_int_to_datetime
@@ -60,13 +59,13 @@ class IntervalEventSource(SimulationEventSource):
         return set()
 
     def _get_trading_points(self, trading_date, frequency):
-        trading_hours = set()
+        trading_points = set()
         for account_type in self._account_list:
             if account_type == ACCOUNT_TYPE.STOCK:
-                trading_hours.update(self._get_stock_trading_hours(trading_date, frequency))
+                trading_points.update(self._get_stock_trading_points(trading_date, frequency))
             elif account_type == ACCOUNT_TYPE.FUTURE:
-                trading_hours.update(self._get_future_trading_hours(trading_date, frequency))
-        return sorted(list())
+                trading_points.update(self._get_future_trading_points(trading_date, frequency))
+        return sorted(list(trading_points))
 
     def _get_events_for_d(self, start_date, end_date, frequency):
         num = int(frequency[:-1])

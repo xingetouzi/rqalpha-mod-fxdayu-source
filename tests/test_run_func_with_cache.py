@@ -20,12 +20,12 @@ def before_trading(context):
 
 
 def handle_bar(context, bar_dict):
+    print(context.now)
     # print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
     data = pd.DataFrame(history_bars(context.s1, 5, "5m", include_now=True))
     data.set_index(data["datetime"].map(convert_int_to_datetime), inplace=True)
-    print(context.now)
-    # print(data)
+    print(data)
     if not context.fired:
         # order_percent并且传入1代表买入该股票并且使其占有投资组合的100%
         order_percent(context.s1, 1)
@@ -38,8 +38,8 @@ config = {
         "end_date": "2016-06-05",
         "securities": ['stock'],
         "stock_starting_cash": 100000,
-        "frequency": "1m",
-        "benchmark": "000001.XSHG",
+        "frequency": "5m",
+        "benchmark": "600000.XSHG",
         "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
         "strategy_file": __file__
     },

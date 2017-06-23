@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from rqalpha_mod_mongo_datasource.data_source import MongoDataSource
 
 
-class mytest(unittest.TestCase):
+class TestMongoDataSource(unittest.TestCase):
     # 初始化工作
     def setUp(self):
         path = pathlib.Path("e:/Users/BurdenBear/.rqalpha/bundle")
