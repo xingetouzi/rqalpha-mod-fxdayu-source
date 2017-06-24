@@ -20,6 +20,32 @@ class Cache(object):
         self._instrument = instrument
         self._frequency = frequency
 
+    def __len__(self):
+        return len(self._data) if self._data is not None else 0
+
+    @property
+    def last_dt(self):
+        if len(self):
+            return convert_int_to_datetime(self._data[-1]["datetime"])
+        else:
+            return None
+
+    @property
+    def chunk(self):
+        return self._chunk
+
+    @property
+    def instrument(self):
+        return self._instrument
+
+    @property
+    def frequency(self):
+        return self._frequency
+
+    @property
+    def finished(self):
+        return self._finished
+
     def raw_history_bars(self, start_dt=None, end_dt=None, length=None, updated=False):
         bars = self._data
         if bars is not None:
@@ -35,7 +61,7 @@ class Cache(object):
                         return None
                     else:
                         return bars[start_pos:end_pos]
-                # else update the cache
+                        # else update the cache
             elif length is not None:
                 if end_dt:
                     if end_pos < len(bars) or bars[-1]["datetime"] == end_dti:
@@ -43,7 +69,7 @@ class Cache(object):
                             return None
                         else:
                             return bars[end_pos - length: end_pos]
-                    # else update the cache
+                            # else update the cache
                 elif start_dt:
                     if start_pos == 0 and bars[0]["datetime"] != start_dti:
                         return None
@@ -53,11 +79,7 @@ class Cache(object):
         # update the cache
         system_log.debug("缓存更新")
         if not self._finished and not updated:
-            if bars is not None and len(bars):
-                last = convert_int_to_datetime(bars[-1]["datetime"]) + timedelta(seconds=1)
-            else:
-                last = end_dt or start_dt
-            self._source.update_cache(self._instrument, self._frequency, last, self._chunk)
+            self._source.update_cache(self, end_dt or start_dt)
             return self.raw_history_bars(start_dt, end_dt, length, updated=True)
         return None
 
@@ -78,14 +100,18 @@ class Cache(object):
         # import pandas as pd
         # system_log.debug(pd.DataFrame(self._data))
 
+    def close(self):
+        self._finished = True
+
 
 class CacheMixin(object):
     MAX_CACHE_SPACE = 40000000
     CACHE_LENGTH = 10000
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self._caches = None
-        self.init_cache()
+        self.clear_cache()
+        self._raw_history_bars = self.raw_history_bars
         self.raw_history_bars = self.decorator_raw_history_bars(self.raw_history_bars)
 
     @classmethod
@@ -96,21 +122,26 @@ class CacheMixin(object):
     def set_max_cache_space(cls, value):
         cls.MAX_CACHE_SPACE = value
 
-    def init_cache(self):
+    def clear_cache(self):
         if self._caches is None:
             self._caches = LRU(self.MAX_CACHE_SPACE // self.CACHE_LENGTH)
         else:
             self._caches.clear()
 
-    def get_new_cache(self, instrument, frequency, dt, count):
-        raise NotImplementedError
-
-    def update_cache(self, instrument, frequency, dt, count):
-        bars = self.get_new_cache(instrument, frequency, dt, count)
-        key = (instrument.order_book_id, frequency)
-        if key not in self._caches:
-            self._caches[key] = Cache(self, self.CACHE_LENGTH, instrument, frequency)
-        self._caches[key].update_bars(bars, count)
+    def update_cache(self, cache, dt):
+        if len(cache):
+            last = cache.last_dt + timedelta(seconds=1)
+        else:
+            bar_data = self._raw_history_bars(cache.instrument, cache.frequency,
+                                              end_dt=dt - timedelta(seconds=1), length=cache.chunk)
+            if bar_data is not None:
+                cache.update_bars(bar_data, len(bar_data))
+            last = dt
+        bar_data = self._raw_history_bars(cache.instrument, cache.frequency, start_dt=last, length=cache.chunk)
+        if bar_data is None:
+            cache.close()
+        else:
+            cache.update_bars(bar_data, cache.chunk)
 
     def decorator_raw_history_bars(self, func):
         @functools.wraps(func)

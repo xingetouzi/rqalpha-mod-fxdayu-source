@@ -19,7 +19,7 @@ class MongoDataMod(AbstractMod):
             if mod_config.max_cache_space:
                 MongoCacheDataSource.set_cache_length(int(mod_config.cache_length))
             data_source = MongoCacheDataSource(env.config.base.data_bundle_path, mongo_url)
-            data_source.init_cache()  # 为了支持单例模式下多次运行
+            data_source.clear_cache()  # 为了支持单例模式下多次运行
         else:
             data_source = MongoDataSource(env.config.base.data_bundle_path, mongo_url)
         event_source = IntervalEventSource(env, env.config.base.account_list)

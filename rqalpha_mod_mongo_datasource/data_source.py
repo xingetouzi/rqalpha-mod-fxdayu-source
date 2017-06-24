@@ -1,6 +1,6 @@
 # encoding: utf-8
 import re
-from datetime import date
+from datetime import date, timedelta
 
 import six
 from dateutil.relativedelta import relativedelta
@@ -88,11 +88,12 @@ class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
         pass
 
     def _get_date_range(self, frequency):
+        from pymongo import DESCENDING
         try:
             db = self._get_db(INSTRUMENT_TYPE.CS, frequency)
         except NoneDataError:
             db = self._get_db(INSTRUMENT_TYPE.CS, "1" + frequency[-1])
-            from pymongo import DESCENDING
+
         try:
             start = self._handler.client.get_database(db).get_collection("600000.XSHG").find() \
                 .sort("_id").limit(1)[0]["datetime"]
@@ -113,7 +114,3 @@ class MongoCacheDataSource(MongoDataSource, CacheMixin):
     def __init__(self, path, mongo_url):
         MongoDataSource.__init__(self, path, mongo_url)
         CacheMixin.__init__(self)
-
-    def get_new_cache(self, instrument, frequency, dt, count):
-        bar_data = super(MongoCacheDataSource, self).raw_history_bars(instrument, frequency, start_dt=dt, length=count)
-        return bar_data

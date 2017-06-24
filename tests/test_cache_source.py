@@ -37,7 +37,7 @@ class mytest(unittest.TestCase):
         data = source.history_bars(self._instrument, 10, "1m",
                                    ["datetime", "close", "low", "high", "open", "volume"],
                                    datetime.now())
-        source.init_cache()
+        source.clear_cache()
         print(pd.DataFrame(data))
 
     def get_cache_info(self, source, frequency):
