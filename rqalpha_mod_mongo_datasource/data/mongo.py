@@ -1,41 +1,20 @@
 # encoding: utf-8
-import re
-from datetime import date, timedelta
+from datetime import date
 
-import six
 from dateutil.relativedelta import relativedelta
 from rqalpha.const import INSTRUMENT_TYPE
 from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha.model.instrument import Instrument
-from rqalpha.utils.datetime_func import convert_dt_to_int
 from rqalpha.utils.py2 import lru_cache
 
 from rqalpha_mod_mongo_datasource.module.cache import CacheMixin
 from rqalpha_mod_mongo_datasource.module.odd import OddFrequencyDataSource
-from rqalpha_mod_mongo_datasource.utils import DataFrameConverter
+from rqalpha_mod_mongo_datasource.utils import DataFrameConverter, Singleton
 
 INSTRUMENT_TYPE_MAP = {
     INSTRUMENT_TYPE.CS: "stock",
     INSTRUMENT_TYPE.INDX: "stock",
 }
-
-
-class Singleton(type):
-    SINGLETON_ENABLED = True
-
-    def __init__(cls, *args, **kwargs):
-        cls._instance = None
-        super(Singleton, cls).__init__(*args, **kwargs)
-
-    def __call__(cls, *args, **kwargs):
-        if cls.SINGLETON_ENABLED:
-            if cls._instance is None:
-                cls._instance = super(Singleton, cls).__call__(*args, **kwargs)
-                return cls._instance
-            else:
-                return cls._instance
-        else:
-            return super(Singleton, cls).__call__(*args, **kwargs)
 
 
 class NoneDataError(BaseException):
@@ -112,5 +91,5 @@ class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
 
 class MongoCacheDataSource(MongoDataSource, CacheMixin):
     def __init__(self, path, mongo_url):
-        MongoDataSource.__init__(self, path, mongo_url)
+        super(MongoCacheDataSource, self).__init__(path, mongo_url)
         CacheMixin.__init__(self)

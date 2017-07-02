@@ -10,7 +10,7 @@ from rqalpha.utils.logger import user_system_log
 
 def init(context):
     logger.info("init")
-    context.s1 = "000001.XSHE"
+    context.s1 = "000002.XSHE"
     update_universe(context.s1)
     context.fired = False
 
@@ -23,7 +23,7 @@ def handle_bar(context, bar_dict):
     print(context.now)
     # print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
-    data = pd.DataFrame(history_bars(context.s1, 5, "5m", include_now=True))
+    data = pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True))
     data.set_index(data["datetime"].map(convert_int_to_datetime), inplace=True)
     print(data)
     if not context.fired:
@@ -34,11 +34,11 @@ def handle_bar(context, bar_dict):
 
 config = {
     "base": {
-        "start_date": "2016-01-01",
-        "end_date": "2016-06-05",
+        "start_date": "2015-12-19",
+        "end_date": "2015-12-31",
         "securities": ['stock'],
         "stock_starting_cash": 100000,
-        "frequency": "5m",
+        "frequency": "1m",
         "benchmark": "600000.XSHG",
         "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
         "strategy_file": __file__
@@ -50,7 +50,7 @@ config = {
         "sys_analyser": {
             "enabled": True,
             # "report_save_path": ".",
-            "plot": False
+            "plot": True
         },
         "sys_simulation": {
             "enabled": True,
@@ -58,7 +58,7 @@ config = {
         },
         "mongo_datasource": {
             "enabled": True,
-            "mongo_url": "mongodb://192.168.0.103:30000",
+            "mongo_url": "mongodb://192.168.0.100:27017",
             "enable_cache": True,
             "cache_length": 10000
         }

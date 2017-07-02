@@ -2,10 +2,11 @@
 
 import pathlib
 import unittest
-import pandas as pd
 from datetime import datetime, timedelta
 
-from rqalpha_mod_mongo_datasource.data_source import MongoDataSource
+import pandas as pd
+
+from rqalpha_mod_mongo_datasource.data.mongo import MongoDataSource
 
 
 class TestMongoDataSource(unittest.TestCase):
