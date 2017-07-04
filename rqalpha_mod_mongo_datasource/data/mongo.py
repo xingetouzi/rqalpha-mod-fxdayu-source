@@ -26,7 +26,7 @@ class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
 
     def __init__(self, path, mongo_url):
         super(MongoDataSource, self).__init__(path)
-        from rqalpha_mod_mongo_datasource.mongo_handler import MongoHandler
+        from rqalpha_mod_mongo_datasource.share.mongo_handler import MongoHandler
         self._handler = MongoHandler(mongo_url)
         self._db_map = self._get_frequency_db_map()
 

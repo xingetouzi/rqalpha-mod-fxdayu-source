@@ -4,13 +4,14 @@ from lru import LRU
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 from pytz import timezone
 from rqalpha.data.base_data_source import BaseDataSource
 from zipline.utils.calendars import register_calendar
 from zipline.utils.calendars.trading_calendar import TradingCalendar, days_at_time
 
 RQALPHA_ROOT = os.environ.get("RQALPHA_ROOT", "~/.rqalpha")
-BUNDLE_PATH = os.path.join(RQALPHA_ROOT, "bundle")
+RQALPHA_BUNDLE_PATH = os.path.join(RQALPHA_ROOT, "bundle")
 _CALENDAR_NAME = "ASTOCK"
 
 start_default = pd.Timestamp('2012-05-01', tz='UTC')
@@ -21,7 +22,7 @@ end_default = end_base + pd.Timedelta(days=365)
 
 
 class RqalphaAStockTradingCalendar(TradingCalendar):
-    def __init__(self, start=start_default, end=end_default, path=BUNDLE_PATH):
+    def __init__(self, start=start_default, end=end_default, path=RQALPHA_BUNDLE_PATH):
         super(RqalphaAStockTradingCalendar, self).__init__()
         self._data_source = BaseDataSource(path)
         _all_days = self._data_source.get_trading_calendar()
@@ -82,4 +83,4 @@ class RqalphaAStockTradingCalendar(TradingCalendar):
 
 
 ASTOCK_TRADING_CALENDAR = RqalphaAStockTradingCalendar()
-register_calendar(_CALENDAR_NAME, RqalphaAStockTradingCalendar)
+register_calendar(_CALENDAR_NAME, ASTOCK_TRADING_CALENDAR)

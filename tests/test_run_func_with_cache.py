@@ -23,7 +23,10 @@ def handle_bar(context, bar_dict):
     print(context.now)
     # print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
-    data = pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True))
+    array = history_bars(context.s1, 5, "1m", skip_suspended=False, include_now=True)
+    # print(array)
+    data = pd.DataFrame(array)
+    print(data)
     data.set_index(data["datetime"].map(convert_int_to_datetime), inplace=True)
     print(data)
     if not context.fired:
@@ -34,7 +37,7 @@ def handle_bar(context, bar_dict):
 
 config = {
     "base": {
-        "start_date": "2015-12-19",
+        "start_date": "2015-12-17",
         "end_date": "2015-12-31",
         "securities": ['stock'],
         "stock_starting_cash": 100000,
@@ -56,11 +59,16 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
+        # "mongo_datasource": {
+        #     "enabled": True,
+        #     "source": "mongo",
+        #     "mongo_url": "mongodb://192.168.0.101:27017",
+        #     "enable_cache": True,
+        #     "cache_length": 10000
+        # }
         "mongo_datasource": {
             "enabled": True,
-            "mongo_url": "mongodb://192.168.0.100:27017",
-            "enable_cache": True,
-            "cache_length": 10000
+            "source": "bundle"
         }
     }
 }

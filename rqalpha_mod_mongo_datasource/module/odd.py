@@ -44,7 +44,7 @@ class OddFrequencyDataSource(AbstractDataSource):
                 bar_data = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=num)
                 bar_data = self._resample_bars(bar_data, frequency)
             else:
-                raise NotImplementedError
+                return super(OddFrequencyDataSource, self).get_bar(instrument, dt, frequency)
         if bar_data is None or not bar_data.size:
             return super(OddFrequencyDataSource, self).get_bar(
                 instrument, dt, frequency
@@ -80,7 +80,11 @@ class OddFrequencyDataSource(AbstractDataSource):
                         bar_data = bar_data[-bar_count:]
                         # TODO 复权以及跳过停牌
             else:
-                raise NotImplementedError  # TODO 支持小时和日线的resample
+                return super(OddFrequencyDataSource, self).history_bars(
+                        instrument, bar_count, frequency, fields, dt,
+                        skip_suspended=skip_suspended, include_now=include_now,
+                        adjust_type=adjust_type, adjust_orig=adjust_orig
+                )
                 # if fields is not None:
                 #     if not isinstance(fields, six.string_types):
                 #         fields = [field for field in fields if field in bar_data]
