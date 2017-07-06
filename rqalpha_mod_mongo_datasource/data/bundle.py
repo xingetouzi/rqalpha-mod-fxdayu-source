@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha_mod_mongo_datasource.share.astock_minute_reader import AStockBcolzMinuteBarReader
 

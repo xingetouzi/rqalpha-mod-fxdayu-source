@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import pandas as pd
 import six
 from rqalpha.interface import AbstractDataSource

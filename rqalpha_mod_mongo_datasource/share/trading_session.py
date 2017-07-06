@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from abc import ABCMeta, abstractproperty
 from datetime import date, datetime, time
 
