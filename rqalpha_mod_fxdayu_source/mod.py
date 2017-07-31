@@ -2,14 +2,14 @@
 
 from rqalpha.interface import AbstractMod
 
-from rqalpha_mod_mongo_datasource.const import DataSourceType
-from rqalpha_mod_mongo_datasource.data.bundle import BundleCacheDataSource, BundleDataSource
-from rqalpha_mod_mongo_datasource.data.mongo import MongoDataSource, MongoCacheDataSource
-from rqalpha_mod_mongo_datasource.event_source import IntervalEventSource
-from rqalpha_mod_mongo_datasource.module.cache import CacheMixin
+from rqalpha_mod_fxdayu_source.const import DataSourceType
+from rqalpha_mod_fxdayu_source.data.bundle import BundleCacheDataSource, BundleDataSource
+from rqalpha_mod_fxdayu_source.data.mongo import MongoDataSource, MongoCacheDataSource
+from rqalpha_mod_fxdayu_source.event_source import IntervalEventSource
+from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
 
 
-class MongoDataMod(AbstractMod):
+class FxdayuSourceMod(AbstractMod):
     def __init__(self):
         self._old_cache_length = CacheMixin.CACHE_LENGTH
         self._old_max_cache_space = CacheMixin.MAX_CACHE_SPACE

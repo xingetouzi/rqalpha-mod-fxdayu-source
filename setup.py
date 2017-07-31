@@ -11,7 +11,7 @@ with open(join(dirname(__file__), 'VERSION.txt'), 'rb') as f:
 requirements = [str(ir.req) for ir in parse_requirements("requirements.txt", session=False)]
 
 setup(
-    name='rqalpha-mod-mongo-datasource',
+    name='rqalpha-mod-fxdayu-source',
     version=version,
     description='RQAlpha DataSource Mod supporting reading day or minute bar from mongodb',
     packages=find_packages(exclude=[]),
@@ -19,7 +19,7 @@ setup(
     author_email='public@fxdayu.com',
     license='Apache License v2',
     package_data={'': ['*.*']},
-    url='https://github.com/xingetouzi/rqalpha_mod_mongo_datasource',
+    url='https://github.com/xingetouzi/rqalpha-mod-fxdayu-source',
     install_requires=requirements,
     zip_safe=False,
     classifiers=[

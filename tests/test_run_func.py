@@ -50,7 +50,7 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.1.40:30000"
         }

@@ -5,7 +5,7 @@ import six
 from rqalpha.interface import AbstractDataSource
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
-from rqalpha_mod_mongo_datasource.utils import DataFrameConverter
+from rqalpha_mod_fxdayu_source.utils import DataFrameConverter
 
 RESAMPLE_TAG_MAP = {
     "m": "T",

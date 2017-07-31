@@ -39,8 +39,7 @@ config = {
     "base": {
         "start_date": "2015-12-17",
         "end_date": "2015-12-31",
-        "securities": ['stock'],
-        "stock_starting_cash": 100000,
+        "accounts": {"stock": 100000},
         "frequency": "1m",
         "benchmark": "600000.XSHG",
         "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
@@ -59,14 +58,14 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        # "mongo_datasource": {
+        # "fxdayu_source": {
         #     "enabled": True,
         #     "source": "mongo",
         #     "mongo_url": "mongodb://192.168.0.101:27017",
         #     "enable_cache": True,
         #     "cache_length": 10000
         # }
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "source": "bundle"
         }

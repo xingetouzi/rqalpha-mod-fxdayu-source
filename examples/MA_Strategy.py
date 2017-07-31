@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # __author__ = "BurdenBear"
 
-
-# coding=utf-8
-import rqalpha
 import os
-from rqalpha.api import *
+
+import rqalpha
 import talib
-import pandas as pd
+from rqalpha.api import *
+
+frequency = "1h"
 
 
 def init(context):
@@ -17,7 +17,7 @@ def init(context):
 
 
 def handle_bar(context, bar_dict):
-    prices = history_bars(context.s1, context.LONGPERIOD + 1, '1d', 'close')
+    prices = history_bars(context.s1, context.LONGPERIOD + 1, frequency, 'close')
     short_avg = talib.SMA(prices, context.SHORTPERIOD)
     long_avg = talib.SMA(prices, context.LONGPERIOD)
 
@@ -47,6 +47,7 @@ config = {
         "end_date": "2016-12-01",
         "accounts": {'stock': 1000000},
         "benchmark": "000300.XSHG",
+        "frequency": frequency,
         "strategy_file_path": os.path.abspath(__file__)
     },
     "extra": {
@@ -56,6 +57,10 @@ config = {
         "sys_analyser": {
             "enabled": True,
             "plot": True
+        },
+        "mongo_datasource": {
+            "enabled": True,
+            "plot": True,
         }
     }
 }

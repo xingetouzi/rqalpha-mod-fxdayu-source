@@ -3,7 +3,7 @@ import datetime
 
 import pandas as pd
 
-from rqalpha_mod_mongo_datasource.event_source import _date_range, IntervalEventSource
+from rqalpha_mod_fxdayu_source.event_source import _date_range, IntervalEventSource
 
 
 class TestEventSource(unittest.TestCase):

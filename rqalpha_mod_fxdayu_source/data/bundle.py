@@ -1,10 +1,10 @@
 # encoding: utf-8
 
 from rqalpha.data.base_data_source import BaseDataSource
-from rqalpha_mod_mongo_datasource.share.astock_minute_reader import AStockBcolzMinuteBarReader
+from rqalpha_mod_fxdayu_source.share.astock_minute_reader import AStockBcolzMinuteBarReader
 
-from rqalpha_mod_mongo_datasource.module.cache import CacheMixin
-from rqalpha_mod_mongo_datasource.module.odd import OddFrequencyDataSource
+from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
+from rqalpha_mod_fxdayu_source.module.odd import OddFrequencyDataSource
 
 
 class BundleDataSource(OddFrequencyDataSource, BaseDataSource):

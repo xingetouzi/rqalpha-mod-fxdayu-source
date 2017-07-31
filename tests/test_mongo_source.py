@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
-from rqalpha_mod_mongo_datasource.data.mongo import MongoDataSource
+from rqalpha_mod_fxdayu_source.data.mongo import MongoDataSource
 
 
 class TestMongoDataSource(unittest.TestCase):
