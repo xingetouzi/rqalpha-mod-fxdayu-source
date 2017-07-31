@@ -79,7 +79,7 @@ class AStockBcolzMinuteBarReader(BcolzMinuteBarReader):
         if instrument not in self._index_skip_suspending:
             carray = self._open_minute_file("close", instrument)
             sub_index = bcolz.eval("carray != 0", vm="numexpr")
-            index = self._minute_index[:len(sub_index)][sub_index]
+            index = self._minute_index[:len(sub_index)][sub_index[:]]
             self._index_skip_suspending[instrument] = index
         return self._index_skip_suspending[instrument]
 
@@ -98,20 +98,19 @@ class AStockBcolzMinuteBarReader(BcolzMinuteBarReader):
         -------
 
         """
-
+        if not start_dt and not end_dt and not length:
+            raise RuntimeError("At least two of start_dt, end_dt and length must be given")
         if not (start_dt and end_dt):
             if skip_suspended:
                 index = self._filtered_index(instrument)
             else:
                 index = self._minute_index
             if end_dt and length:
-                start_dt = index[np.searchsorted(index, end_dt, side="right") - length]
+                start_dt = index[max(0, np.searchsorted(index, end_dt, side="right") - length)]
             elif start_dt and length:
-                end_dt = index[np.searchsorted(index, start_dt) + length]
-        if not (start_dt and end_dt):
-            raise RuntimeError("At least two of start_dt, end_dt and length must be given")
+                end_dt = index[min(index.size - 1, np.searchsorted(index, start_dt) + length)]
         slicer = self._minute_index.slice_indexer(start_dt, end_dt)
-        return slicer.start, slicer.stop
+        return slicer.start, max(slicer.stop, slicer.start)
 
     @staticmethod
     @nb.jit
@@ -130,9 +129,9 @@ class AStockBcolzMinuteBarReader(BcolzMinuteBarReader):
         return out
 
     @staticmethod
-    # @nb.jit
+    @nb.jit
     def numba_loops_dropna(arr):
-        mask = np.full((arr.shape[0], len(arr.dtype)), True)
+        mask = np.full((arr.shape[0], len(arr.dtype)), True, dtype=np.bool)
         for n, name in enumerate(arr.dtype.names):
             mask[:, n] = ~np.isnan(arr[name])
         mask = mask.min(axis=1)

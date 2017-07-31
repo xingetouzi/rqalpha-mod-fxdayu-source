@@ -17,13 +17,9 @@ class MongoDataMod(AbstractMod):
     def start_up(self, env, mod_config):
         type_ = DataSourceType(mod_config.source)
         if type_ == DataSourceType.MONGO:
-            # default enable cache
-            mod_config.enable_cache = True if mod_config.enable_cache is None else mod_config.enable_cache
             args = (env.config.base.data_bundle_path, mod_config.mongo_url)
             data_source_cls = MongoCacheDataSource if mod_config.enable_cache else MongoDataSource
         elif type_ == DataSourceType.BUNDLE:
-            # default disable cache
-            mod_config.enable_cache = False if mod_config.enable_cache is None else mod_config.enable_cache
             args = (env.config.base.data_bundle_path, mod_config.bundle_path)
             data_source_cls = BundleCacheDataSource if mod_config.enable_cache else BundleDataSource
         else:
@@ -34,7 +30,7 @@ class MongoDataMod(AbstractMod):
             if mod_config.max_cache_space:
                 CacheMixin.set_cache_length(int(mod_config.cache_length))
         data_source = data_source_cls(*args)
-        event_source = IntervalEventSource(env, env.config.base.account_list)
+        event_source = IntervalEventSource(env)
         env.set_data_source(data_source)
         env.set_event_source(event_source)
 

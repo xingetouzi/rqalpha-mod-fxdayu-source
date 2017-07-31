@@ -5,7 +5,7 @@ import re
 
 import numpy as np
 import pandas as pd
-from rqalpha.const import ACCOUNT_TYPE
+from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
 from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import SimulationEventSource
 from rqalpha.utils import get_account_type
@@ -33,8 +33,8 @@ def _date_range(start, end, freq):
 
 
 class IntervalEventSource(SimulationEventSource):
-    def __init__(self, env, account_list):
-        super(IntervalEventSource, self).__init__(env, account_list)
+    def __init__(self, env):
+        super(IntervalEventSource, self).__init__(env)
 
     @staticmethod
     def _get_stock_trading_points(trading_date, frequency):
@@ -53,7 +53,7 @@ class IntervalEventSource(SimulationEventSource):
             trading_minutes = set()
             universe = self._get_universe()
             for order_book_id in universe:
-                if get_account_type(order_book_id) == ACCOUNT_TYPE.STOCK:
+                if get_account_type(order_book_id) == DEFAULT_ACCOUNT_TYPE.STOCK:
                     continue
                 trading_minutes.update(self._env.data_proxy.get_trading_minutes_for(order_book_id, trading_date))
             return set([convert_int_to_datetime(minute) for minute in trading_minutes])
@@ -62,10 +62,10 @@ class IntervalEventSource(SimulationEventSource):
 
     def _get_trading_points(self, trading_date, frequency):
         trading_points = set()
-        for account_type in self._account_list:
-            if account_type == ACCOUNT_TYPE.STOCK:
+        for account_type in self._config.base.accounts:
+            if account_type == DEFAULT_ACCOUNT_TYPE.STOCK.name:
                 trading_points.update(self._get_stock_trading_points(trading_date, frequency))
-            elif account_type == ACCOUNT_TYPE.FUTURE:
+            elif account_type == DEFAULT_ACCOUNT_TYPE.FUTURE.name:
                 trading_points.update(self._get_future_trading_points(trading_date, frequency))
         return sorted(list(trading_points))
 

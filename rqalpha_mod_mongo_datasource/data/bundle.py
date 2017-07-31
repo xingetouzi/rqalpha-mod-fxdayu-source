@@ -26,5 +26,5 @@ class BundleDataSource(OddFrequencyDataSource, BaseDataSource):
 
 class BundleCacheDataSource(BundleDataSource, CacheMixin):
     def __init__(self, path, bundle_path):
-        super(BundleCacheDataSource, self).__init__(self, path, bundle_path)
+        super(BundleCacheDataSource, self).__init__(path, bundle_path)
         CacheMixin.__init__(self)

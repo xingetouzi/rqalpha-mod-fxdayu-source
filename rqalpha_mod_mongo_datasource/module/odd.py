@@ -66,21 +66,22 @@ class OddFrequencyDataSource(AbstractDataSource):
             if freq == "m":
                 lower_bar_count = (bar_count + 1) * num
                 bar_data = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=lower_bar_count)
-                if bar_data is None or not bar_data.size:
+                if bar_data is None:
                     return super(OddFrequencyDataSource, self).history_bars(
                         instrument, bar_count, frequency, fields, dt,
                         skip_suspended=skip_suspended, include_now=include_now,
                         adjust_type=adjust_type, adjust_orig=adjust_orig
                     )
                 else:
-                    bar_data = self._resample_bars(bar_data, frequency)
-                    dti = convert_dt_to_int(dt)
-                    if bar_data["datetime"][-1] != dti and not include_now:
-                        bar_data = bar_data[:-1]
-                        bar_data = bar_data[-bar_count:]
-                    else:
-                        bar_data = bar_data[-bar_count:]
-                        # TODO 复权以及跳过停牌
+                    if bar_data.size:
+                        bar_data = self._resample_bars(bar_data, frequency)
+                        dti = convert_dt_to_int(dt)
+                        if bar_data["datetime"][-1] != dti and not include_now:
+                            bar_data = bar_data[:-1]
+                            bar_data = bar_data[-bar_count:]
+                        else:
+                            bar_data = bar_data[-bar_count:]
+                            # TODO 复权以及跳过停牌
             else:
                 return super(OddFrequencyDataSource, self).history_bars(
                         instrument, bar_count, frequency, fields, dt,

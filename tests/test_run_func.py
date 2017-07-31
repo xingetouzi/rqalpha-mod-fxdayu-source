@@ -33,7 +33,7 @@ config = {
         "securities": ['stock'],
         "stock_starting_cash": 100000,
         "frequency": "1m",
-        "benchmark": "000001.XSHG",
+        "benchmark": None,
         "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
         "strategy_file": __file__
     },
@@ -52,7 +52,7 @@ config = {
         },
         "mongo_datasource": {
             "enabled": True,
-            "mongo_url": "mongodb://192.168.0.103:30000"
+            "mongo_url": "mongodb://192.168.1.40:30000"
         }
     }
 }
