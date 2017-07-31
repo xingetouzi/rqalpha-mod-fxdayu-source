@@ -16,7 +16,7 @@
 | mongo\_datasource.source | "mongo" | 行情源类型，可选值为"mongo", "bundle" |
 | mongo\_datasource.bundle\_path| None | bundle数据文件位置，默认取"~\\.fxdayu\\bundle", 可以用环境变量覆盖，取值为"$FXDAYU\_ROOT\\bundle" |
 | mongo\_datasource.mongo\_url | "mongodb://localhost:27017" | mongodb数据库地址 |
-| mongo\_datasource.enable\_cache | None | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。为None时由使用的数据源类型确定取值，当数据源为mongodb数据库时默认为True，开启缓存；为bundle时默认为False，关闭缓存|
+| mongo\_datasource.enable\_cache | True | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。|
 | mongo\_datasource.cache\_length | 1000 | 当开启缓存优化时，指定缓存的大小 |
 
 ## 示例配置
@@ -50,8 +50,6 @@ config = {
         "mongo_datasource": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.103:30000",
-            "enable_cache": True,
-            "cache_length": 10000
         }
     }
 }
