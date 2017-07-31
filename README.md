@@ -17,7 +17,7 @@
 | mongo\_datasource.bundle\_path| None | bundle数据文件位置，默认取"~\\.fxdayu\\bundle", 可以用环境变量覆盖，取值为"$FXDAYU\_ROOT\\bundle" |
 | mongo\_datasource.mongo\_url | "mongodb://localhost:27017" | mongodb数据库地址 |
 | mongo\_datasource.enable\_cache | True | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。|
-| mongo\_datasource.cache\_length | 1000 | 当开启缓存优化时，指定缓存的大小 |
+| mongo\_datasource.cache\_length | 1000 | 当开启缓存优化时，指定单页缓存的条目数 |
 
 ## 示例配置
 
