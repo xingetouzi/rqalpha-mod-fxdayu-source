@@ -1,6 +1,8 @@
 # encoding: utf-8
 
 from rqalpha.data.base_data_source import BaseDataSource
+
+from rqalpha_mod_fxdayu_source.utils import Singleton
 from rqalpha_mod_fxdayu_source.share.astock_minute_reader import AStockBcolzMinuteBarReader
 
 from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
@@ -8,6 +10,8 @@ from rqalpha_mod_fxdayu_source.module.odd import OddFrequencyDataSource
 
 
 class BundleDataSource(OddFrequencyDataSource, BaseDataSource):
+    __metaclass__ = Singleton
+
     def __init__(self, path, bundle_path):
         super(BundleDataSource, self).__init__(path)
         self._bundle_reader = AStockBcolzMinuteBarReader(bundle_path)
