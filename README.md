@@ -1,13 +1,11 @@
 # rqalpha mongodb datasource插件，支持分钟级别数据,以及任意分辨率的时间框架
 
 ## 安装步骤
-1.进入项目文件保存目录,用git拉取项目文件,
-
-```git clone https://github.com/xingetouzi/rqalpha-mod-mongo-datasource.git```
-
-2.切换到对应安装有rqalpha的python虚拟环境
-
-3.运行```rqalpha mod install -e .```
+在Terminal中运行
+```
+$ pip install git+https://github.com/xingetouzi/rqalpha-mod-fxdayu-source.git
+$ rqalpha mod install fxdayu_source
+```
 
 ## 配置选项：
 | 选项 | 默认值 | 说明 |
