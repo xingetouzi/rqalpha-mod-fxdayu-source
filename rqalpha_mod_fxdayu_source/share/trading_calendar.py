@@ -6,13 +6,12 @@ from lru import LRU
 
 import numpy as np
 import pandas as pd
-from pandas.tseries.offsets import DateOffset
 from pytz import timezone
 from rqalpha.data.base_data_source import BaseDataSource
 from zipline.utils.calendars import register_calendar
 from zipline.utils.calendars.trading_calendar import TradingCalendar, days_at_time
 
-RQALPHA_ROOT = os.environ.get("RQALPHA_ROOT", "~/.rqalpha")
+RQALPHA_ROOT = os.environ.get("RQALPHA_ROOT", os.path.expanduser("~/.rqalpha"))
 RQALPHA_BUNDLE_PATH = os.path.join(RQALPHA_ROOT, "bundle")
 _CALENDAR_NAME = "ASTOCK"
 

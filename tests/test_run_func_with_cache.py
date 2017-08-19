@@ -7,6 +7,8 @@ from rqalpha.api import *
 from rqalpha.utils.datetime_func import convert_int_to_datetime
 from rqalpha.utils.logger import user_system_log
 
+frequency = "1d"
+
 
 def init(context):
     logger.info("init")
@@ -23,7 +25,7 @@ def handle_bar(context, bar_dict):
     print(context.now)
     # print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
-    array = history_bars(context.s1, 5, "1m", skip_suspended=False, include_now=True)
+    array = history_bars(context.s1, 5, "1" + frequency[-1], skip_suspended=False, include_now=True)
     # print(array)
     data = pd.DataFrame(array)
     print(data)
@@ -40,9 +42,8 @@ config = {
         "start_date": "2015-12-17",
         "end_date": "2015-12-31",
         "accounts": {"stock": 100000},
-        "frequency": "1m",
-        "benchmark": "600000.XSHG",
-        "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
+        "frequency": frequency,
+        "benchmark": None,
         "strategy_file": __file__
     },
     "extra": {
@@ -58,19 +59,23 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        # "fxdayu_source": {
-        #     "enabled": True,
-        #     "source": "mongo",
-        #     "mongo_url": "mongodb://192.168.0.101:27017",
-        #     "enable_cache": True,
-        #     "cache_length": 10000
-        # }
         "fxdayu_source": {
             "enabled": True,
-            "source": "bundle"
+            "source": "mongo",
+            "mongo_url": "mongodb://192.168.0.101:27017",
+            "enable_cache": True,
+            "cache_length": 10000
         }
     }
 }
+
+config["mod"]["fxdayu_source"] = {
+    "enabled": True,
+    "source": "bundle",
+    "enable_cache": True,
+    "cache_length": 10000
+}
+
 
 start = time.time()
 # 您可以指定您要传递的参数

@@ -2,77 +2,37 @@
 
 import datetime
 import re
+from itertools import islice
 
-import numpy as np
-import pandas as pd
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
 from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import SimulationEventSource
-from rqalpha.utils import get_account_type
-from rqalpha.utils.datetime_func import convert_int_to_datetime
 from rqalpha.utils.i18n import gettext as _
+
+from rqalpha_mod_fxdayu_source.utils import InDayTradingPointIndexer
 
 _unit_freq_template = re.compile("[^0-9]+")
 _freq_template = re.compile("[0-9]+(?P<freq1>h|m|d)|(?P<freq2>tick)")
-_freq_map = {
-    "m": "T",
-    "h": "H",
-    "d": "D"
-}
-
-
-def _date_range(start, end, freq):
-    unit_freq = freq[-1]
-    dates = pd.date_range(start, end, freq=freq[:-1] + _freq_map[unit_freq]) - pd.Timedelta(minutes=1)
-    dates = dates.to_pydatetime()
-    if dates.size:
-        dates = dates[1:]
-    if not dates.size or dates[-1] != end:
-        dates = np.concatenate([dates, [end]])
-    return dates
 
 
 class IntervalEventSource(SimulationEventSource):
     def __init__(self, env):
         super(IntervalEventSource, self).__init__(env)
-
-    @staticmethod
-    def _get_stock_trading_points(trading_date, frequency):
-        trading_points = set()
-        current_dt = datetime.datetime.combine(trading_date, datetime.time(9, 31))
-        am_end_dt = current_dt.replace(hour=11, minute=30)
-        pm_start_dt = current_dt.replace(hour=13, minute=1)
-        pm_end_dt = current_dt.replace(hour=15, minute=0)
-        sessions = [(current_dt, am_end_dt), (pm_start_dt, pm_end_dt)]
-        for start, end in sessions:
-            trading_points.update(_date_range(start, end, frequency))
-        return trading_points
-
-    def _get_future_trading_points(self, trading_date, frequency):
-        if frequency == "1m":
-            trading_minutes = set()
-            universe = self._get_universe()
-            for order_book_id in universe:
-                if get_account_type(order_book_id) == DEFAULT_ACCOUNT_TYPE.STOCK:
-                    continue
-                trading_minutes.update(self._env.data_proxy.get_trading_minutes_for(order_book_id, trading_date))
-            return set([convert_int_to_datetime(minute) for minute in trading_minutes])
-        # TODO future hours
-        return set()
+        self._indexer = InDayTradingPointIndexer()
 
     def _get_trading_points(self, trading_date, frequency):
+        indexer = self._indexer
         trading_points = set()
         for account_type in self._config.base.accounts:
             if account_type == DEFAULT_ACCOUNT_TYPE.STOCK.name:
-                trading_points.update(self._get_stock_trading_points(trading_date, frequency))
+                trading_points.update(indexer.get_a_stock_trading_points(trading_date, frequency))
             elif account_type == DEFAULT_ACCOUNT_TYPE.FUTURE.name:
-                trading_points.update(self._get_future_trading_points(trading_date, frequency))
+                trading_points.update(indexer.get_future_trading_points(self._env, trading_date, frequency))
         return sorted(list(trading_points))
 
     def _get_events_for_d(self, start_date, end_date, frequency):
         num = int(frequency[:-1])
-        count = 0
-        for day in self._env.data_proxy.get_trading_dates(start_date, end_date):
+        for day in islice(self._env.data_proxy.get_trading_dates(start_date, end_date), None, None, num):
             date = day.to_pydatetime()
             dt_before_trading = date.replace(hour=0, minute=0)
             dt_bar = date.replace(hour=15, minute=0)

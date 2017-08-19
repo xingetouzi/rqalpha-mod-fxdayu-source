@@ -12,12 +12,12 @@
 ## 配置选项：
 | 选项 | 默认值 | 说明 |
 | --- | :--: | --- |
-| mongo\_datasource.enabled | True | 插件开关 |
-| mongo\_datasource.source | "mongo" | 行情源类型，可选值为"mongo", "bundle" |
-| mongo\_datasource.bundle\_path| None | bundle数据文件位置，默认取"~\\.fxdayu\\bundle", 可以用环境变量覆盖，取值为"$FXDAYU\_ROOT\\bundle" |
+| fxdayu\_source.enabled | True | 插件开关 |
+| fxdayu\_source.source | "mongo" | 行情源类型，可选值为"mongo", "bundle" |
+| fxdayu\_source.bundle\_path| None | bundle数据文件位置，默认取"~\\.fxdayu\\bundle", 可以用环境变量覆盖，取值为"$FXDAYU\_ROOT\\bundle" |
 | mongo\_datasource.mongo\_url | "mongodb://localhost:27017" | mongodb数据库地址 |
-| mongo\_datasource.enable\_cache | True | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。|
-| mongo\_datasource.cache\_length | 1000 | 当开启缓存优化时，指定单页缓存的条目数 |
+| fxdayu\_source.enable\_cache | True | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。|
+| fxdayu\_source.cache\_length | 1000 | 当开启缓存优化时，指定单页缓存的条目数 |
 
 ## 示例配置
 
@@ -89,6 +89,11 @@ config = {
     }
 }
 ```
+
+# 支持的frequency
++ ```*d```: 任意天
++ ```*h```: 任意小时
++ ```*m```: 任意分钟
 
 # MORE
 更多example见

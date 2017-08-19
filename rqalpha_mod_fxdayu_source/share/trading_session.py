@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod
 from datetime import date, datetime, time
 
 from six import with_metaclass
@@ -10,7 +10,8 @@ class TradingSession(with_metaclass(ABCMeta)):
     def __init__(self):
         self._minuter_per_day = None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def sessions(self):
         raise NotImplementedError
 
@@ -47,4 +48,4 @@ class AStockTradingSession(TradingSession):
             return result
 
 
-ATOCK_TRADING_SESSION = AStockTradingSession()
+ASTOCK_TRADING_SESSION = AStockTradingSession()

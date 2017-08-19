@@ -16,7 +16,7 @@ from zipline.gens.sim_engine import NANOS_IN_MINUTE
 
 from .utils import FXDAYU_BUNDLE_PATH
 from .trading_calendar import ASTOCK_TRADING_CALENDAR as _
-from .trading_session import ATOCK_TRADING_SESSION
+from .trading_session import ASTOCK_TRADING_SESSION
 from .utils import sid_subdir_path as _sid_subdir_path, calc_minute_index as _calc_minute_index
 
 _  # register the ASTOCK_TRADING_CALENDAR
@@ -26,7 +26,7 @@ class AStockBcolzMinuteBarReader(BcolzMinuteBarReader):
     FIELDS = ["open", "high", "low", "close", "volume"]
 
     def __init__(self, rootdir=FXDAYU_BUNDLE_PATH, sid_cache_size=1000, converter=StockBarConverter,
-                 trading_session=ATOCK_TRADING_SESSION):
+                 trading_session=ASTOCK_TRADING_SESSION):
         minutes_dir = os.path.join(rootdir if rootdir is not None else FXDAYU_BUNDLE_PATH, "minutes")
         super(AStockBcolzMinuteBarReader, self).__init__(minutes_dir, sid_cache_size=sid_cache_size)
         self._index_skip_suspending = LRU(sid_cache_size)
