@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 import pandas as pd
-import six
 from rqalpha.interface import AbstractDataSource
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
@@ -11,6 +10,12 @@ RESAMPLE_TAG_MAP = {
     "m": "T",
     "h": "h",
     "d": "d",
+}
+
+TIME_TOLERANCE = {
+    "m": 100,
+    "h": 10000,
+    "d": 1000000,
 }
 
 
@@ -37,11 +42,11 @@ class OddFrequencyDataSource(AbstractDataSource):
         return bar_data
 
     def get_bar(self, instrument, dt, frequency):
+        num = int(frequency[:-1])
+        freq = frequency[-1]
         if self.is_base_frequency(instrument, frequency):
             bar_data = self.raw_history_bars(instrument, frequency, end_dt=dt, length=1)
         else:
-            num = int(frequency[:-1])
-            freq = frequency[-1]
             if freq == "m":
                 bar_data = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=num)
                 bar_data = self._resample_bars(bar_data, frequency)
@@ -53,7 +58,8 @@ class OddFrequencyDataSource(AbstractDataSource):
             )
         else:
             dti = convert_dt_to_int(dt)
-            return bar_data[-1] if bar_data[-1]["datetime"] == dti else None
+            # TODO num * TIME_TOLERANCE[freq] maybe some problem in "d" frequency
+            return bar_data[-1] if 0 <= bar_data[-1]["datetime"] - dti < num * TIME_TOLERANCE[freq] else None
 
     def history_bars(self, instrument, bar_count, frequency, fields, dt,
                      skip_suspended=True, include_now=False,
@@ -84,9 +90,9 @@ class OddFrequencyDataSource(AbstractDataSource):
                             # TODO 复权以及跳过停牌
             else:
                 return super(OddFrequencyDataSource, self).history_bars(
-                        instrument, bar_count, frequency, fields, dt,
-                        skip_suspended=skip_suspended, include_now=include_now,
-                        adjust_type=adjust_type, adjust_orig=adjust_orig
+                    instrument, bar_count, frequency, fields, dt,
+                    skip_suspended=skip_suspended, include_now=include_now,
+                    adjust_type=adjust_type, adjust_orig=adjust_orig
                 )
                 # if fields is not None:
                 #     if not isinstance(fields, six.string_types):

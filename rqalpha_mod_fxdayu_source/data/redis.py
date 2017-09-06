@@ -2,8 +2,8 @@ from collections import OrderedDict
 from datetime import datetime, time
 from dateutil.parser import parse
 from bisect import bisect_left, bisect_right
-import redis
 import numpy as np
+from rqalpha.utils.logger import system_log
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha.data.converter import StockBarConverter
@@ -18,7 +18,7 @@ CONVERTER = StockBarConverter
 
 
 class InDayIndexCache(object):
-    __meta_class__ = Singleton
+    __metaclass__ = Singleton
 
     def __init__(self):
         self._index = {}
@@ -53,8 +53,11 @@ class InDayIndexCache(object):
 
 
 class RedisClient(object):
-    def __init__(self, host, port):
-        self._client = redis.Redis(host=host, port=port)
+    __metaclass__ = Singleton
+
+    def __init__(self, redis_url):
+        import redis
+        self._client = redis.from_url(redis_url)
         self._indexer = InDayIndexCache()
 
     def get(self, order_book_id, frequency):
@@ -97,14 +100,15 @@ class RedisBars(object):
         dtype = OrderedDict([(f, np.uint64 if f == "datetime" else np.float64) for f in fields])
         length = r - l
         result = np.empty(shape=(length,), dtype=list(dtype.items()))
+        result.fill(np.nan)
         for field in fields:
-            value = self._client.lrange(self._get_redis_key(field), l, r)
+            value = self._client.lrange(self._get_redis_key(field), l, r - 1)
             if field == "datetime":
                 value = list(map(lambda x: convert_dt_to_int(parse(x.decode())), value))
             else:
                 value = np.array(list(map(lambda x: x.decode(), value)), dtype=np.str)
                 value = value.astype(np.float64)
-            result[:len(value)][field] = value
+            result[:len(value)][field] = value[:]
         return result
 
     def __len__(self):
@@ -116,19 +120,25 @@ class RedisBars(object):
     def end(self):
         return
 
-    def find(self, date, side="left"):
+    def find(self, date, side="right"):
         dts = self.index
         if side == "left":
-            return bisect_left(dts, date)
+            index = bisect_left(dts, date)
         elif side == "right":
-            return bisect_right(dts, date)
+            index = bisect_right(dts, date)
+        else:
+            raise RuntimeError("unsupported side of find method, please use [left, right]")
+        return index
 
 
 class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
-    def __init__(self, path, host, port, datasource=None):
+    def __init__(self, path, redis_url, datasource=None):
         super(RedisDataSource, self).__init__(path)
+        if not (redis_url.startswith("redis://") or redis_url.startswith("tcp://")):
+            redis_url = "redis://" + redis_url.splits("//")[-1]
         self._history_datasource = datasource
-        self._client = RedisClient(host, port)
+        system_log.info("Connected to Redis on: %s" % redis_url)
+        self._client = RedisClient(redis_url)
 
     def set_history_datasource(self, datasource):
         self._history_datasource = datasource
@@ -140,11 +150,11 @@ class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
         today_bars = EMPTY_BARS
         if end_dt:
             if end_dt.date() >= today:
-                idx_end = bars.find(end_dt, side="right")
+                idx_end = bars.find(end_dt, side="left") + 1
                 if start_dt:
-                    if start_dt.date() > today:
+                    if start_dt.date() > today or start_dt > end_dt:
                         return EMPTY_BARS  # 确定控制的返回形式
-                    idx_start = bars.find(start_dt)
+                    idx_start = bars.find(start_dt, side="left")
                     if start_dt.date() < today:
                         history_bars = self._history_datasource.raw_history_bars(
                             instrument,
@@ -171,7 +181,7 @@ class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
             if start_dt.date() > today:
                 return EMPTY_BARS
             elif start_dt.date() == today:
-                idx_start = bars.find(start_dt)
+                idx_start = bars.find(start_dt, side="left")
                 return bars.bars(idx_start, idx_start + length)
             else:
                 history_bars = self._history_datasource.raw_history_bars(instrument, frequency, start_dt, end_dt,
@@ -185,3 +195,8 @@ class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
             return history_bars
         else:
             return today_bars
+
+    def available_data_range(self, frequency):
+        start, end = self._history_datasource.available_data_range(frequency)
+        end = datetime.now().date()
+        return start, end

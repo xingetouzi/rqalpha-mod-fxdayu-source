@@ -1,5 +1,5 @@
 # encoding: utf-8
-
+import time
 import datetime
 import re
 from itertools import islice
@@ -7,6 +7,8 @@ from itertools import islice
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
 from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import SimulationEventSource
+from rqalpha.mod.rqalpha_mod_sys_stock_realtime.event_source import RealtimeEventSource
+from rqalpha.mod.rqalpha_mod_sys_stock_realtime.utils import is_holiday_today, is_tradetime_now
 from rqalpha.utils.i18n import gettext as _
 
 from rqalpha_mod_fxdayu_source.utils import InDayTradingPointIndexer
@@ -141,3 +143,28 @@ class IntervalEventSource(SimulationEventSource):
             return getattr(self, "_get_events_for_" + freq)(start_date, end_date, frequency)
         except Exception:
             raise NotImplementedError(_("Frequency {} is not support.").format(frequency))
+
+
+class RealTimeEventSource(RealtimeEventSource):
+    def clock_worker(self):
+        while True:
+            time.sleep(self.fps)
+
+            if is_holiday_today():
+                time.sleep(60)
+                continue
+
+            dt = datetime.datetime.now()
+
+            if dt.strftime("%H:%M:%S") >= "08:30:00" and dt.date() > self.before_trading_fire_date:
+                self.event_queue.put((dt, EVENT.BEFORE_TRADING))
+                self.before_trading_fire_date = dt.date()
+            elif dt.strftime("%H:%M:%S") >= "15:10:00" and dt.date() > self.after_trading_fire_date:
+                self.event_queue.put((dt, EVENT.AFTER_TRADING))
+                self.after_trading_fire_date = dt.date()
+            elif dt.strftime("%H:%M:%S") >= "15:10:00" and dt.date() > self.settlement_fire_date:
+                self.event_queue.put((dt, EVENT.SETTLEMENT))
+                self.settlement_fire_date = dt.date()
+
+            if is_tradetime_now():
+                self.event_queue.put((dt, EVENT.BAR))

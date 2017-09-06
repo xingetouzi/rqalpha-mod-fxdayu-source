@@ -34,7 +34,8 @@ config = {
         "frequency": "1m",
         "benchmark": None,
         "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
-        "strategy_file": __file__
+        "strategy_file": __file__,
+        "run_type": "p"
     },
     "extra": {
         "log_level": "verbose",
@@ -45,13 +46,10 @@ config = {
             # "report_save_path": ".",
             "plot": True
         },
-        "sys_simulation": {
-            "enabled": True,
-            # "matching_type": "last"
-        },
         "fxdayu_source": {
             "enabled": True,
-            "mongo_url": "mongodb://192.168.1.40:30000"
+            "mongo_url": "mongodb://192.168.0.101:27017",
+            "redis_url": "redis://192.168.0.104:10101"
         }
     }
 }
