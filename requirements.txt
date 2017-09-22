@@ -2,7 +2,7 @@ rqalpha>=3.0.2
 redis>=2.2.5
 pymongo>=3.3.0
 numpy>=1.11.1
-pandas==0.19.1
+pandas==0.19.*
 zipline>=1.1.1
 lru_dict>=1.1.6
 numba>=0.33.0
