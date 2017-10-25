@@ -45,7 +45,7 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.103:30000",
         }
@@ -79,7 +79,7 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "source": "bundle",
             "bundle_path": os.path.expanduser("~\.fxdayu\bundle"),
