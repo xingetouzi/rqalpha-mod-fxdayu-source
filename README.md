@@ -13,7 +13,7 @@ $ rqalpha mod install fxdayu_source
 | fxdayu\_source.enabled | True | 插件开关 |
 | fxdayu\_source.source | "mongo" | 行情源类型，可选值为"mongo", "bundle" |
 | fxdayu\_source.bundle\_path| None | bundle数据文件位置，默认取"~\\.fxdayu\\bundle", 可以用环境变量覆盖，取值为"$FXDAYU\_ROOT\\bundle" |
-| mongo\_datasource.mongo\_url | "mongodb://localhost:27017" | mongodb数据库地址 |
+| fxdayu\_source.mongo\_url | "mongodb://localhost:27017" | mongodb数据库地址 |
 | fxdayu\_source.enable\_cache | True | bool型，是否开启分页读取缓存优化功能(缓存优化仅适用于回测)。|
 | fxdayu\_source.cache\_length | 1000 | 当开启缓存优化时，指定单页缓存的条目数 |
 
@@ -45,7 +45,7 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.103:30000",
         }
@@ -79,7 +79,7 @@ config = {
             "enabled": True,
             # "matching_type": "last"
         },
-        "mongo_datasource": {
+        "fxdayu_source": {
             "enabled": True,
             "source": "bundle",
             "bundle_path": os.path.expanduser("~\.fxdayu\bundle"),
