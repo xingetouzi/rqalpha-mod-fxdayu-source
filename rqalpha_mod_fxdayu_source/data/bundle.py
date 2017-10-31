@@ -9,7 +9,7 @@ from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
 from rqalpha_mod_fxdayu_source.module.odd import OddFrequencyDataSource
 
 
-class BundleDataSource(OddFrequencyDataSource, BaseDataSource):
+class BundleDataSource(OddFrequencyDataSource):
     __metaclass__ = Singleton
 
     def __init__(self, path, bundle_path):

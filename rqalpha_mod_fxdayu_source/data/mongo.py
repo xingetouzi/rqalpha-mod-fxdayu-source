@@ -22,7 +22,7 @@ class NoneDataError(BaseException):
     pass
 
 
-class MongoDataSource(OddFrequencyDataSource, BaseDataSource):
+class MongoDataSource(OddFrequencyDataSource):
     __metaclass__ = Singleton
 
     def __init__(self, path, mongo_url):

@@ -1,8 +1,8 @@
 # encoding: utf-8
 
 import pandas as pd
-from rqalpha.environment import Environment
-from rqalpha.interface import AbstractDataSource
+from rqalpha.data.adjust import FIELDS_REQUIRE_ADJUSTMENT, adjust_bars
+from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
 from rqalpha_mod_fxdayu_source.utils import DataFrameConverter
@@ -20,7 +20,7 @@ TIME_TOLERANCE = {
 }
 
 
-class OddFrequencyDataSource(AbstractDataSource):
+class OddFrequencyDataSource(BaseDataSource):
     def __init__(self, *args, **kwargs):
         super(OddFrequencyDataSource, self).__init__(*args, **kwargs)
 
@@ -46,24 +46,24 @@ class OddFrequencyDataSource(AbstractDataSource):
         num = int(frequency[:-1])
         freq = frequency[-1]
         if self.is_base_frequency(instrument, frequency):
-            bar_data = self.raw_history_bars(instrument, frequency, end_dt=dt, length=1)
+            bars = self.raw_history_bars(instrument, frequency, end_dt=dt, length=1)
         else:
             if freq == "m":
-                bar_data = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=num)
-                bar_data = self._resample_bars(bar_data, frequency)
+                bars = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=num)
+                bars = self._resample_bars(bars, frequency)
             else:
                 return super(OddFrequencyDataSource, self).get_bar(instrument, dt, frequency)
-        if bar_data is None or not bar_data.size:
+        if bars is None or not bars.size:
             return super(OddFrequencyDataSource, self).get_bar(
                 instrument, dt, frequency
             )
         else:
             dti = convert_dt_to_int(dt)
             # TODO num * TIME_TOLERANCE[freq] maybe some problem in "d" frequency
-            if abs(bar_data[-1]["datetime"] - dti) < num * TIME_TOLERANCE[freq]:
-                return bar_data[-1]
+            if abs(bars[-1]["datetime"] - dti) < num * TIME_TOLERANCE[freq]:
+                return bars[-1]
             else:
-                data = bar_data[-1].copy()
+                data = bars[-1].copy()
                 data["datetime"] = dti
                 data["open"] = data["close"]
                 data["high"] = data["close"]
@@ -75,29 +75,29 @@ class OddFrequencyDataSource(AbstractDataSource):
                      skip_suspended=True, include_now=False,
                      adjust_type='pre', adjust_orig=None):
         if self.is_base_frequency(instrument, frequency):
-            bar_data = self.raw_history_bars(instrument, frequency, end_dt=dt, length=bar_count)
+            bars = self.raw_history_bars(instrument, frequency, end_dt=dt, length=bar_count)
         else:
             num = int(frequency[:-1])
             freq = frequency[-1]
             if freq == "m":
                 lower_bar_count = (bar_count + 1) * num
-                bar_data = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=lower_bar_count)
-                if bar_data is None:
+                bars = self.raw_history_bars(instrument, "1" + freq, end_dt=dt, length=lower_bar_count)
+                if bars is None:
                     return super(OddFrequencyDataSource, self).history_bars(
                         instrument, bar_count, frequency, fields, dt,
                         skip_suspended=skip_suspended, include_now=include_now,
                         adjust_type=adjust_type, adjust_orig=adjust_orig
                     )
                 else:
-                    if bar_data.size:
-                        bar_data = self._resample_bars(bar_data, frequency)
+                    if bars.size:
+                        bars = self._resample_bars(bars, frequency)
                         dti = convert_dt_to_int(dt)
-                        if bar_data["datetime"][-1] != dti and not include_now:
-                            bar_data = bar_data[:-1]
-                            bar_data = bar_data[-bar_count:]
+                        if bars["datetime"][-1] != dti and not include_now:
+                            bars = bars[:-1]
+                            bars = bars[-bar_count:]
                         else:
-                            bar_data = bar_data[-bar_count:]
-                            # TODO 复权以及跳过停牌
+                            bars = bars[-bar_count:]
+                            # TODO 跳过停牌
             else:
                 return super(OddFrequencyDataSource, self).history_bars(
                     instrument, bar_count, frequency, fields, dt,
@@ -107,7 +107,15 @@ class OddFrequencyDataSource(AbstractDataSource):
                 # if fields is not None:
                 #     if not isinstance(fields, six.string_types):
                 #         fields = [field for field in fields if field in bar_data]
-        return bar_data if fields is None else bar_data[fields]
+        if adjust_type == "none" or instrument.type in {"Future", "INDX"}:
+            return bars if fields is None else bars[fields]
+        if isinstance(fields, str) and fields not in FIELDS_REQUIRE_ADJUSTMENT:
+            return bars if fields is None else bars[fields]
+        return adjust_bars(bars, self.get_ex_cum_factor(instrument.order_book_id),
+                           fields, adjust_type, adjust_orig)
+
+    def raw_history_bars(self, *args, **kwargs):
+        raise NotImplementedError
 
     def is_base_frequency(self, instrument, freq):
         num = int(freq[:-1])
