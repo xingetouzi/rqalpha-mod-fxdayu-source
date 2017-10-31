@@ -70,5 +70,5 @@ def calc_minute_index(market_opens, trading_session):
     return pd.to_datetime(minutes, utc=True, box=True)
 
 
-FXDAYU_ROOT = os.environ.get("FXDAYU_ROOT", "~/.fxdayu")
+FXDAYU_ROOT = os.environ.get("FXDAYU_ROOT", os.path.expanduser("~/.fxdayu"))
 FXDAYU_BUNDLE_PATH = os.path.join(FXDAYU_ROOT, "bundle")

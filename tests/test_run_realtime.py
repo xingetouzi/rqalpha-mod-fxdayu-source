@@ -24,6 +24,9 @@ def handle_bar(context, bar_dict):
         # order_percent并且传入1代表买入该股票并且使其占有投资组合的100%
         order_percent(context.s1, 1)
         context.fired = True
+    else:
+        order_percent(context.s1, 0)
+        context.fired = False
 
 
 config = {
@@ -49,7 +52,7 @@ config = {
         "fxdayu_source": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.101:27017",
-            "redis_url": "redis://192.168.0.104:10101"
+            "redis_url": "redis://192.168.0.116:6379"
         }
     }
 }

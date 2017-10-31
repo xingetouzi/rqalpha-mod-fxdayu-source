@@ -33,7 +33,7 @@ config = {
         "accounts": {"stock": 100000},
         "frequency": "1m",
         "benchmark": None,
-        "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
+        "data_bundle_path": r"C:\Users\BurdenBear\.rqalpha\bundle",
         "strategy_file": __file__
     },
     "extra": {
@@ -51,7 +51,7 @@ config = {
         },
         "fxdayu_source": {
             "enabled": True,
-            "mongo_url": "mongodb://192.168.1.40:30000"
+            "mongo_url": "mongodb://192.168.0.101:27017"
         }
     }
 }

@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import pandas as pd
+from rqalpha.environment import Environment
 from rqalpha.interface import AbstractDataSource
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
@@ -59,7 +60,16 @@ class OddFrequencyDataSource(AbstractDataSource):
         else:
             dti = convert_dt_to_int(dt)
             # TODO num * TIME_TOLERANCE[freq] maybe some problem in "d" frequency
-            return bar_data[-1] if 0 <= bar_data[-1]["datetime"] - dti < num * TIME_TOLERANCE[freq] else None
+            if abs(bar_data[-1]["datetime"] - dti) < num * TIME_TOLERANCE[freq]:
+                return bar_data[-1]
+            else:
+                data = bar_data[-1].copy()
+                data["datetime"] = dti
+                data["open"] = data["close"]
+                data["high"] = data["close"]
+                data["low"] = data["close"]
+                data["volume"] = 0
+                return data
 
     def history_bars(self, instrument, bar_count, frequency, fields, dt,
                      skip_suspended=True, include_now=False,
@@ -98,9 +108,6 @@ class OddFrequencyDataSource(AbstractDataSource):
                 #     if not isinstance(fields, six.string_types):
                 #         fields = [field for field in fields if field in bar_data]
         return bar_data if fields is None else bar_data[fields]
-
-    def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
-        raise NotImplementedError
 
     def is_base_frequency(self, instrument, freq):
         num = int(freq[:-1])

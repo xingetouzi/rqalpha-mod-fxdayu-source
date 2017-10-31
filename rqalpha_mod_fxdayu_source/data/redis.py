@@ -69,7 +69,7 @@ class RedisBars(object):
         "datetime", "open", "high", "low", "close", "volume"
     ]
 
-    def __init__(self, client, order_book_id, frequency):
+    def __init__(self, client, order_book_id, frequency, indexer=None):
         """
 
         Parameters
@@ -84,7 +84,7 @@ class RedisBars(object):
         self._client = client
         self._order_book_id = order_book_id
         self._frequency = frequency
-        self._indexer = InDayIndexCache()
+        self._indexer = None
         self._converter = CONVERTER
 
     def _get_redis_key(self, key):
@@ -92,7 +92,10 @@ class RedisBars(object):
 
     @property
     def index(self):
-        return self._indexer.get_index(self._frequency, self._order_book_id)
+        if self._indexer:
+            return self._indexer.get_index(self._frequency, self._order_book_id)
+        else:
+            return [parse(item) for item in self._client.lrange(self._get_redis_key("datetime"), 0, -1)]
 
     def bars(self, l, r, fields=None):
         if fields is None:
@@ -150,7 +153,7 @@ class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
         today_bars = EMPTY_BARS
         if end_dt:
             if end_dt.date() >= today:
-                idx_end = bars.find(end_dt, side="left") + 1
+                idx_end = bars.find(end_dt, side="right")
                 if start_dt:
                     if start_dt.date() > today or start_dt > end_dt:
                         return EMPTY_BARS  # 确定控制的返回形式

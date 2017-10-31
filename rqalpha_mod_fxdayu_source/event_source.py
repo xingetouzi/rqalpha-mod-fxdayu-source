@@ -148,7 +148,7 @@ class IntervalEventSource(SimulationEventSource):
 class RealTimeEventSource(RealtimeEventSource):
     def clock_worker(self):
         while True:
-            time.sleep(self.fps)
+            # time.sleep(self.fps)
 
             if is_holiday_today():
                 time.sleep(60)
@@ -168,3 +168,5 @@ class RealTimeEventSource(RealtimeEventSource):
 
             if is_tradetime_now():
                 self.event_queue.put((dt, EVENT.BAR))
+
+            time.sleep(self.fps)

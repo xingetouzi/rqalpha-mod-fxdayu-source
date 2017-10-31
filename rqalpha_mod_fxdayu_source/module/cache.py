@@ -77,13 +77,14 @@ class Cache(object):
                         return bars[start_pos: start_pos + length]
                         # else update the cache
         # update the cache
-        system_log.debug("缓存更新")
         if not self._finished and not updated:
             self._source.update_cache(self, end_dt or start_dt)
             return self.raw_history_bars(start_dt, end_dt, length, updated=True)
         return None
 
     def update_bars(self, bars, count):
+        system_log.debug("缓存更新,品种:[{}],时间:[{}, {}]".format(self.instrument.order_book_id,
+                                                           bars["datetime"][0], bars["datetime"][-1]))
         old = self._data
         if old is not None and bars is not None:
             self._data = np.concatenate((self._data, bars), axis=0)
