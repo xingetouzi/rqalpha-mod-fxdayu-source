@@ -135,14 +135,14 @@ class CacheMixin(object):
         else:
             bar_data = self._raw_history_bars(cache.instrument, cache.frequency,
                                               end_dt=dt - timedelta(seconds=1), length=cache.chunk)
-            if bar_data is not None:
+            if bar_data is not None and len(bar_data):
                 cache.update_bars(bar_data, len(bar_data))
             last = dt
         bar_data = self._raw_history_bars(cache.instrument, cache.frequency, start_dt=last, length=cache.chunk)
-        if bar_data is None:
-            cache.close()
-        else:
+        if bar_data is not None and len(bar_data):
             cache.update_bars(bar_data, cache.chunk)
+        else:
+            cache.close()
 
     def decorator_raw_history_bars(self, func):
         @functools.wraps(func)

@@ -25,6 +25,14 @@ class DataFrameConverter(object):
         return result[fields]
 
     @staticmethod
+    def empty(fields=None):
+        if fields is None:
+            fields = ["datetime", "open", "high", "low", "close", "volume"]
+        dtypes = [(f, StockBarConverter.field_type(f, np.float64)) if f != "datetime" else ('datetime', np.uint64)
+                  for f in fields]
+        return np.empty((0, ), dtype=dtypes)
+
+    @staticmethod
     def np2df(np_arr):
         df = pd.DataFrame(np_arr)
         df["datetime"] = df["datetime"].apply(convert_int_to_datetime)

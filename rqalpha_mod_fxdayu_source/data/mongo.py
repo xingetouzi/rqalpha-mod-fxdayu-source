@@ -55,6 +55,8 @@ class MongoDataSource(OddFrequencyDataSource):
         data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length).reset_index()
         if data is not None and data.size:
             return DataFrameConverter.df2np(data)
+        else:
+            return DataFrameConverter.empty()
 
     def is_base_frequency(self, instrument, frequency):
         if isinstance(instrument, Instrument):
