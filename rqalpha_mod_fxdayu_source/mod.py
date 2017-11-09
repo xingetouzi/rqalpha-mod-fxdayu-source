@@ -21,7 +21,7 @@ class FxdayuSourceMod(AbstractMod):
 
     def start_up(self, env, mod_config):
         type_ = DataSourceType(mod_config.source)
-        if type_ == DataSourceType.MONGO:
+        if type_ in [DataSourceType.MONGO, DataSourceType.REAL_TIME]:
             args = (env.config.base.data_bundle_path, mod_config.mongo_url)
             data_source_cls = MongoCacheDataSource if mod_config.enable_cache else MongoDataSource
         elif type_ == DataSourceType.BUNDLE:
@@ -36,10 +36,10 @@ class FxdayuSourceMod(AbstractMod):
                 CacheMixin.set_cache_length(int(mod_config.cache_length))
         data_source = data_source_cls(*args)
         mod_config.redis_uri = mod_config.redis_url  # fit rqalpha
-        if env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING):
+        is_real_time = env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING)
+        if is_real_time or type_ == DataSourceType.REAL_TIME:
             user_system_log.warn(_("[Warning] When you use this version of RealtimeTradeMod, history_bars can only "
                                    "get data from yesterday."))
-
             if mod_config.redis_url:
                 data_source = RedisDataSource(env.config.base.data_bundle_path, mod_config.redis_url,
                                               datasource=data_source)
@@ -47,6 +47,7 @@ class FxdayuSourceMod(AbstractMod):
             else:
                 data_source = DirectDataSource(env.config.base.data_bundle_path)
                 system_log.info(_("RealtimeTradeMod using market from network"))
+        if is_real_time:
             event_source = RealTimeEventSource(mod_config.fps, mod_config)
             # add persist
             persist_provider = DiskPersistProvider(mod_config.persist_path)

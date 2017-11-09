@@ -58,7 +58,6 @@ class RedisClient(object):
     def __init__(self, redis_url):
         import redis
         self._client = redis.from_url(redis_url)
-        self._indexer = InDayIndexCache()
 
     def get(self, order_book_id, frequency):
         return RedisBars(self._client, order_book_id, frequency)
@@ -103,6 +102,8 @@ class RedisBars(object):
         dtype = OrderedDict([(f, np.uint64 if f == "datetime" else np.float64) for f in fields])
         length = r - l
         result = np.empty(shape=(length,), dtype=list(dtype.items()))
+        if not length:
+            return result
         result.fill(np.nan)
         for field in fields:
             value = self._client.lrange(self._get_redis_key(field), l, r - 1)

@@ -147,6 +147,7 @@ class IntervalEventSource(SimulationEventSource):
 
 class RealTimeEventSource(RealtimeEventSource):
     def clock_worker(self):
+        once_before_trading = False
         while True:
             # time.sleep(self.fps)
 
@@ -159,6 +160,7 @@ class RealTimeEventSource(RealtimeEventSource):
             if dt.strftime("%H:%M:%S") >= "08:30:00" and dt.date() > self.before_trading_fire_date:
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
                 self.before_trading_fire_date = dt.date()
+                once_before_trading = True
             elif dt.strftime("%H:%M:%S") >= "15:10:00" and dt.date() > self.after_trading_fire_date:
                 self.event_queue.put((dt, EVENT.AFTER_TRADING))
                 self.after_trading_fire_date = dt.date()
@@ -166,6 +168,10 @@ class RealTimeEventSource(RealtimeEventSource):
                 self.event_queue.put((dt, EVENT.SETTLEMENT))
                 self.settlement_fire_date = dt.date()
 
+            if not once_before_trading and self._env.config.extra.force_run_init_when_pt_resume:
+                self.event_queue.put((dt, EVENT.BEFORE_TRADING))
+                self.before_trading_fire_date = dt.date()
+                once_before_trading = True
             if is_tradetime_now():
                 self.event_queue.put((dt, EVENT.BAR))
 
