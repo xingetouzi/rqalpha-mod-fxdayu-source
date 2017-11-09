@@ -1,4 +1,6 @@
+import click
 import os
+from rqalpha import cli
 
 __config__ = {
     "source": "mongo",
@@ -17,3 +19,16 @@ __config__ = {
 def load_mod():
     from .mod import FxdayuSourceMod
     return FxdayuSourceMod()
+
+
+"""
+--force-init
+"""
+
+cli.commands['run'].params.append(
+    click.Option(
+        ('--force-init/--no-force-init', 'extra__force_run_init_when_pt_resume'),
+        is_flag=True, default=False, show_default=True,
+        help="[fxdayu_source]force run init when paper trading resume or not"
+    )
+)
