@@ -49,10 +49,11 @@ class MongoDataSource(OddFrequencyDataSource):
             raise NoneDataError("MongoDB 中没有品种%s的%s数据" % (message, frequency))
 
     def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
-        # 转换到自建mongodb结构
+        # 转换到自建mongodb结构s
         code = instrument.order_book_id
         db = self._get_db(instrument, frequency)
-        data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length).reset_index()
+        data = self._handler.read(code, db=db, start=start_dt, end=end_dt, length=length, sort=[("datetime", 1)]).\
+            reset_index()
         if data is not None and data.size:
             return DataFrameConverter.df2np(data)
         else:
@@ -78,9 +79,9 @@ class MongoDataSource(OddFrequencyDataSource):
 
         try:
             start = self._handler.client.get_database(db).get_collection("600000.XSHG").find() \
-                .sort("_id").limit(1)[0]["datetime"]
+                .sort("datetime").limit(1)[0]["datetime"]
             end = self._handler.client.get_database(db).get_collection("600000.XSHG").find() \
-                .sort("_id", direction=DESCENDING).limit(1)[0]["datetime"]
+                .sort("datetime", direction=DESCENDING).limit(1)[0]["datetime"]
         except IndexError:
             raise RuntimeError("无法从MongoDb获取数据时间范围")
         return start.date(), end.date()
