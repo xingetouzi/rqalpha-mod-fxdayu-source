@@ -168,7 +168,9 @@ class RealTimeEventSource(RealtimeEventSource):
                 self.event_queue.put((dt, EVENT.SETTLEMENT))
                 self.settlement_fire_date = dt.date()
 
-            if not once_before_trading and self._env.config.extra.force_run_init_when_pt_resume:
+            if not once_before_trading and self._env.config.extra.force_run_init_when_pt_resume \
+                    and "09:00:00" <= dt.strftime("%H:%M:%S") <= "15:00:00":
+                # restart with init during trading time, re-running before_trading
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
                 self.before_trading_fire_date = dt.date()
                 once_before_trading = True
