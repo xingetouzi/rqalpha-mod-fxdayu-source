@@ -3,6 +3,7 @@ import time
 import datetime
 import re
 from itertools import islice
+from queue import Empty
 
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
@@ -10,6 +11,7 @@ from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import Simul
 from rqalpha.mod.rqalpha_mod_sys_stock_realtime.event_source import RealtimeEventSource
 from rqalpha.mod.rqalpha_mod_sys_stock_realtime.utils import is_holiday_today, is_tradetime_now
 from rqalpha.utils.i18n import gettext as _
+from rqalpha.utils.logger import system_log
 
 from rqalpha_mod_fxdayu_source.utils import InDayTradingPointIndexer
 
@@ -178,3 +180,22 @@ class RealTimeEventSource(RealtimeEventSource):
                 self.event_queue.put((dt, EVENT.BAR))
 
             time.sleep(self.fps)
+
+    def events(self, start_date, end_date, frequency):
+        running = True
+
+        self.clock_engine_thread.start()
+
+        if not self.mod_config.redis_uri:
+            self.quotation_engine_thread.start()
+
+        while running:
+            while True:
+                try:
+                    dt, event_type = self.event_queue.get(timeout=1)
+                    break
+                except Empty:
+                    continue
+            real_dt = datetime.datetime.now()
+            system_log.debug("real_dt {}, dt {}, event {}", real_dt, dt, event_type)
+            yield Event(event_type, calendar_dt=real_dt, trading_dt=dt)
