@@ -158,7 +158,10 @@ class RealTimeEventSource(RealtimeEventSource):
                 continue
 
             dt = datetime.datetime.now()
-
+            next_dt = datetime.datetime.fromtimestamp((dt.timestamp() - 5) // self.fps * self.fps + self.fps)
+            if next_dt > dt:
+                time.sleep(next_dt.timestamp() - dt.timestamp())
+                dt = datetime.datetime.now()
             if dt.strftime("%H:%M:%S") >= "08:30:00" and dt.date() > self.before_trading_fire_date:
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
                 self.before_trading_fire_date = dt.date()
@@ -176,10 +179,12 @@ class RealTimeEventSource(RealtimeEventSource):
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
                 self.before_trading_fire_date = dt.date()
                 once_before_trading = True
-            if is_tradetime_now():
+                continue
+            if dt.strftime("%H:%M:%S") >= "09:30:00" and is_tradetime_now():
                 self.event_queue.put((dt, EVENT.BAR))
-
-            time.sleep(self.fps)
+            dt = datetime.datetime.now()
+            if next_dt.timestamp() + self.fps > dt.timestamp():
+                time.sleep(next_dt.timestamp() + self.fps - dt.timestamp())
 
     def events(self, start_date, end_date, frequency):
         running = True

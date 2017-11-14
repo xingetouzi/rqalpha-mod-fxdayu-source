@@ -79,7 +79,7 @@ class InDayTradingPointIndexer(object):
     @staticmethod
     def get_a_stock_trading_points(trading_date, frequency):
         trading_points = set()
-        current_dt = datetime.datetime.combine(trading_date, datetime.time(9, 31))
+        current_dt = datetime.datetime.combine(trading_date, datetime.time(9, 15))
         am_end_dt = current_dt.replace(hour=11, minute=30)
         pm_start_dt = current_dt.replace(hour=13, minute=1)
         pm_end_dt = current_dt.replace(hour=15, minute=0)
