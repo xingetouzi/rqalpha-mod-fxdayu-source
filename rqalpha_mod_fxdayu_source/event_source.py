@@ -180,7 +180,7 @@ class RealTimeEventSource(RealtimeEventSource):
                 self.before_trading_fire_date = dt.date()
                 once_before_trading = True
                 continue
-            if dt.strftime("%H:%M:%S") >= "09:30:00" and is_tradetime_now():
+            if dt.strftime("%H:%M:%S") >= "09:31:00" and is_tradetime_now():
                 self.event_queue.put((dt, EVENT.BAR))
             dt = datetime.datetime.now()
             if next_dt.timestamp() + self.fps > dt.timestamp():
