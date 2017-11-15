@@ -50,6 +50,9 @@ class Cache(object):
         bars = self._data
         if bars is not None:
             if end_dt:
+                if self._frequency.endswith("d"):
+                    # 日线策略替换为收盘时间
+                    end_dt = end_dt.replace(hour=15, minute=00)
                 end_dti = np.uint64(convert_dt_to_int(end_dt))
                 end_pos = bars["datetime"].searchsorted(end_dti, side="right")
             if start_dt:
