@@ -157,7 +157,9 @@ class CacheMixin(object):
             if data is not None:
                 return data
             else:
-                system_log.debug("缓存未命中")
+                system_log.debug("缓存未命中: 品种[{}]频率[{}] from {} to {}, length {}".format(
+                    instrument.order_book_id, frequency, start_dt, end_dt, length
+                ))
                 return func(instrument, frequency, start_dt=start_dt, end_dt=end_dt, length=length)
 
         return wrapped

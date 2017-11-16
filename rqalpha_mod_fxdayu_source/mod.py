@@ -12,6 +12,7 @@ from rqalpha_mod_fxdayu_source.data.mongo import MongoDataSource, MongoCacheData
 from rqalpha_mod_fxdayu_source.event_source import IntervalEventSource, RealTimeEventSource
 from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
 from rqalpha_mod_fxdayu_source.data.redis import RedisDataSource
+from rqalpha_mod_fxdayu_source.price_board import StockLimitUpDownPriceBoard
 
 
 class FxdayuSourceMod(AbstractMod):
@@ -20,6 +21,7 @@ class FxdayuSourceMod(AbstractMod):
         self._old_max_cache_space = CacheMixin.MAX_CACHE_SPACE
 
     def start_up(self, env, mod_config):
+        env.set_price_board(StockLimitUpDownPriceBoard())
         type_ = DataSourceType(mod_config.source)
         if type_ in [DataSourceType.MONGO, DataSourceType.REAL_TIME]:
             args = (env.config.base.data_bundle_path, mod_config.mongo_url)
