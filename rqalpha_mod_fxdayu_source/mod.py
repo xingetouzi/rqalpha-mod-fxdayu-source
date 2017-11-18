@@ -1,5 +1,9 @@
 # encoding: utf-8
+from datetime import datetime
+
 from rqalpha.const import RUN_TYPE, PERSIST_MODE
+from rqalpha.environment import Environment
+from rqalpha.events import EVENT
 from rqalpha.interface import AbstractMod
 from rqalpha.mod.rqalpha_mod_sys_stock_realtime.direct_data_source import DirectDataSource
 from rqalpha.utils.disk_persist_provider import DiskPersistProvider
@@ -60,6 +64,12 @@ class FxdayuSourceMod(AbstractMod):
         else:
             event_source = IntervalEventSource(env)
         env.set_data_source(data_source)
+        # a patch to start_date since it's real time mod
+        if env.config.base.start_date == datetime.now().date():
+            trading_dates = data_source.get_trading_calendar()
+            pos = trading_dates.searchsorted(env.config.base.start_date)
+            if trading_dates[pos].to_pydatetime().date() != env.config.base.start_date:
+                env.config.base.start_date = trading_dates[max(0, pos - 1)].to_pydatetime().date()
         env.set_event_source(event_source)
 
     def tear_down(self, code, exception=None):

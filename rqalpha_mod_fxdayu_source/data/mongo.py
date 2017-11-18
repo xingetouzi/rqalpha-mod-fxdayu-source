@@ -4,7 +4,6 @@ from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from rqalpha.const import INSTRUMENT_TYPE
-from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha.model.instrument import Instrument
 from rqalpha.utils.py2 import lru_cache
 
