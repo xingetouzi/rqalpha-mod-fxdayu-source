@@ -42,6 +42,11 @@ class FxdayuSourceMod(AbstractMod):
                 CacheMixin.set_cache_length(int(mod_config.cache_length))
         data_source = data_source_cls(*args)
         mod_config.redis_uri = mod_config.redis_url  # fit rqalpha
+        if env.config.base.run_type is RUN_TYPE.BACKTEST and env.config.base.persist_mode == PERSIST_MODE.ON_NORMAL_EXIT:
+            # generate user context using backtest
+            persist_provider = DiskPersistProvider(mod_config.persist_path)
+            env.set_persist_provider(persist_provider)
+
         is_real_time = env.config.base.run_type in (RUN_TYPE.PAPER_TRADING, RUN_TYPE.LIVE_TRADING)
         if is_real_time or type_ == DataSourceType.REAL_TIME:
             user_system_log.warn(_("[Warning] When you use this version of RealtimeTradeMod, history_bars can only "
