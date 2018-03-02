@@ -1,12 +1,10 @@
 # encoding: utf-8
-import logging
 import functools
-from weakref import proxy
 from datetime import timedelta
+from lru import LRU
+from weakref import proxy
 
 import numpy as np
-from lru import LRU
-
 from rqalpha.utils.datetime_func import convert_dt_to_int, convert_int_to_datetime
 from rqalpha.utils.logger import system_log
 
@@ -113,6 +111,7 @@ class CacheMixin(object):
     CACHE_LENGTH = 10000
 
     def __init__(self, *args, **kwargs):
+        super(CacheMixin, self).__init__(*args, **kwargs)
         self._caches = None
         self.clear_cache()
         self._raw_history_bars = self.raw_history_bars

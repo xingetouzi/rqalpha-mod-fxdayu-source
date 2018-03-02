@@ -7,8 +7,8 @@ from rqalpha.const import INSTRUMENT_TYPE
 from rqalpha.model.instrument import Instrument
 from rqalpha.utils.py2 import lru_cache
 
-from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
-from rqalpha_mod_fxdayu_source.module.odd import OddFrequencyDataSource
+from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
+from rqalpha_mod_fxdayu_source.data_source.common import OddFrequencyDataSource
 from rqalpha_mod_fxdayu_source.utils import DataFrameConverter, Singleton
 
 INSTRUMENT_TYPE_MAP = {

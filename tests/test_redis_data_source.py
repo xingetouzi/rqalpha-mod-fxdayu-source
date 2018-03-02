@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, time
 
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
-from rqalpha_mod_fxdayu_source.data.mongo import MongoDataSource
-from rqalpha_mod_fxdayu_source.data.redis import RedisDataSource
+from rqalpha_mod_fxdayu_source.data_source.mongo import MongoDataSource
+from rqalpha_mod_fxdayu_source.data_source.redis import RedisDataSource
 
 RQALPHA_ROOT = os.environ.get("RQALPHA_ROOT")
 REDIS_URL = os.environ.get("REDIS_URL")

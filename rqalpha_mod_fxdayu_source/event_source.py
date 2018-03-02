@@ -3,7 +3,10 @@ import time
 import datetime
 import re
 from itertools import islice
-from queue import Empty
+try:
+    from Queue import Empty
+except ImportError:
+    from queue import Empty
 
 from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
@@ -44,7 +47,6 @@ class IntervalEventSource(SimulationEventSource):
             dt_settlement = date.replace(hour=17, minute=0)
             yield Event(EVENT.BEFORE_TRADING, calendar_dt=dt_before_trading, trading_dt=dt_before_trading)
             yield Event(EVENT.BAR, calendar_dt=dt_bar, trading_dt=dt_bar)
-
             yield Event(EVENT.AFTER_TRADING, calendar_dt=dt_after_trading, trading_dt=dt_after_trading)
             yield Event(EVENT.SETTLEMENT, calendar_dt=dt_settlement, trading_dt=dt_settlement)
 

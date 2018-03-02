@@ -17,9 +17,11 @@ def before_trading(context):
 
 
 def handle_bar(context, bar_dict):
+    logger.info(bar_dict[context.s1])
     print(bar_dict[context.s1])
     # print(pd.DataFrame(history_bars(context.s1, 5, "1d", include_now=True)))
-    print(pd.DataFrame(history_bars(context.s1, 5, "1m")))
+    print(pd.DataFrame(history_bars(context.s1, 5, "5m")))
+    print(pd.DataFrame(history_bars(context.s1, 5, "5m", include_now=True)))
     if not context.fired:
         # order_percent并且传入1代表买入该股票并且使其占有投资组合的100%
         order_percent(context.s1, 1)
@@ -52,7 +54,7 @@ config = {
         "fxdayu_source": {
             "enabled": True,
             "mongo_url": "mongodb://192.168.0.101:27017",
-            "redis_url": "redis://192.168.0.116:6379"
+            "redis_url": "redis://192.168.0.102:6379"
         }
     }
 }

@@ -1,5 +1,4 @@
 import datetime
-from weakref import proxy
 
 import numpy as np
 import pandas as pd

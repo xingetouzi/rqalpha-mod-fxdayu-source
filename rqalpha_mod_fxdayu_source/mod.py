@@ -2,20 +2,16 @@
 from datetime import datetime
 
 from rqalpha.const import RUN_TYPE, PERSIST_MODE
-from rqalpha.environment import Environment
-from rqalpha.events import EVENT
 from rqalpha.interface import AbstractMod
 from rqalpha.mod.rqalpha_mod_sys_stock_realtime.direct_data_source import DirectDataSource
 from rqalpha.utils.disk_persist_provider import DiskPersistProvider
-from rqalpha.utils.logger import user_system_log, system_log
 from rqalpha.utils.i18n import gettext as _
+from rqalpha.utils.logger import user_system_log, system_log
 
 from rqalpha_mod_fxdayu_source.const import DataSourceType
-from rqalpha_mod_fxdayu_source.data.bundle import BundleCacheDataSource, BundleDataSource
-from rqalpha_mod_fxdayu_source.data.mongo import MongoDataSource, MongoCacheDataSource
+from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
+from rqalpha_mod_fxdayu_source.data_source.redis import RedisDataSource
 from rqalpha_mod_fxdayu_source.event_source import IntervalEventSource, RealTimeEventSource
-from rqalpha_mod_fxdayu_source.module.cache import CacheMixin
-from rqalpha_mod_fxdayu_source.data.redis import RedisDataSource
 from rqalpha_mod_fxdayu_source.price_board import StockLimitUpDownPriceBoard
 
 
@@ -28,18 +24,25 @@ class FxdayuSourceMod(AbstractMod):
         env.set_price_board(StockLimitUpDownPriceBoard())
         type_ = DataSourceType(mod_config.source)
         if type_ in [DataSourceType.MONGO, DataSourceType.REAL_TIME]:
+            from rqalpha_mod_fxdayu_source.data_source.mongo import MongoDataSource, MongoCacheDataSource
             args = (env.config.base.data_bundle_path, mod_config.mongo_url)
             data_source_cls = MongoCacheDataSource if mod_config.enable_cache else MongoDataSource
         elif type_ == DataSourceType.BUNDLE:
+            from rqalpha_mod_fxdayu_source.data_source.bundle import BundleCacheDataSource, BundleDataSource
             args = (env.config.base.data_bundle_path, mod_config.bundle_path)
             data_source_cls = BundleCacheDataSource if mod_config.enable_cache else BundleDataSource
+        elif type_ == DataSourceType.QUANTOS:
+            from rqalpha_mod_fxdayu_source.data_source.quantos import QuantOsSource, QuantOsCacheSource
+            args = (env.config.base.data_bundle_path, mod_config.quantos_url,
+                    mod_config.quantos_user, mod_config.quantos_token)
+            data_source_cls = QuantOsCacheSource if mod_config.enable_cache else QuantOsSource
         else:
             raise RuntimeError("data source type [%s] is not supported" % mod_config.source)
         if mod_config.enable_cache:
             if mod_config.cache_length:
                 CacheMixin.set_cache_length(int(mod_config.cache_length))
             if mod_config.max_cache_space:
-                CacheMixin.set_cache_length(int(mod_config.cache_length))
+                CacheMixin.set_max_cache_space(int(mod_config.max_cache_space))
         data_source = data_source_cls(*args)
         mod_config.redis_uri = mod_config.redis_url  # fit rqalpha
         if env.config.base.run_type is RUN_TYPE.BACKTEST and env.config.base.persist_mode == PERSIST_MODE.ON_NORMAL_EXIT:

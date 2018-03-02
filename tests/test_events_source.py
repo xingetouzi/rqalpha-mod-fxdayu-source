@@ -1,12 +1,11 @@
 # encoding: utf-8
 
-import unittest
 import datetime
+import unittest
 
 import pandas as pd
 
 from rqalpha_mod_fxdayu_source.event_source import IntervalEventSource
-from rqalpha_mod_fxdayu_source.utils import cal_date_range
 
 
 class TestEventSource(unittest.TestCase):
