@@ -5,6 +5,7 @@ from rqalpha import run_file
 from rqalpha.api import *
 
 frequency = "1m"
+report_path = ".report"
 
 
 def calculate(close, period):
@@ -99,7 +100,9 @@ config = {
 
 if __name__ == "__main__":
     import time
+    import os
 
     st = time.time()
+    os.makedirs(report_path, exist_ok=True)
     run_file(__file__, config)
     print("Time Cost: %s seconds" % (time.time() - st))
