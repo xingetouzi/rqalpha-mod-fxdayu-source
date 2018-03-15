@@ -3,15 +3,16 @@ from datetime import datetime
 
 from rqalpha.const import RUN_TYPE, PERSIST_MODE
 from rqalpha.interface import AbstractMod
-from rqalpha.mod.rqalpha_mod_sys_stock_realtime.direct_data_source import DirectDataSource
 from rqalpha.utils.disk_persist_provider import DiskPersistProvider
 from rqalpha.utils.i18n import gettext as _
 from rqalpha.utils.logger import user_system_log, system_log
 
 from rqalpha_mod_fxdayu_source.const import DataSourceType
 from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
-from rqalpha_mod_fxdayu_source.data_source.redis import RedisDataSource
+from rqalpha_mod_fxdayu_source.data_source.common.realtime import RealtimeDataSource
 from rqalpha_mod_fxdayu_source.event_source import IntervalEventSource, RealTimeEventSource
+from rqalpha_mod_fxdayu_source.inday_bars.quantos import QuantOsIndayBars
+from rqalpha_mod_fxdayu_source.inday_bars.redis import RedisIndayBars
 from rqalpha_mod_fxdayu_source.price_board import StockLimitUpDownPriceBoard
 
 
@@ -54,13 +55,16 @@ class FxdayuSourceMod(AbstractMod):
         if is_real_time or type_ == DataSourceType.REAL_TIME:
             user_system_log.warn(_("[Warning] When you use this version of RealtimeTradeMod, history_bars can only "
                                    "get data from yesterday."))
-            if mod_config.redis_url:
-                data_source = RedisDataSource(env.config.base.data_bundle_path, mod_config.redis_url,
-                                              datasource=data_source)
+            if type_ == DataSourceType.QUANTOS:
+                inday_bars = QuantOsIndayBars(mod_config.quantos_url,
+                                              mod_config.quantos_user,
+                                              mod_config.quantos_token)
+            elif mod_config.redis_url:
+                inday_bars = RedisIndayBars(mod_config.redis_url)
                 system_log.info(_("RealtimeTradeMod using market from redis"))
             else:
-                data_source = DirectDataSource(env.config.base.data_bundle_path)
-                system_log.info(_("RealtimeTradeMod using market from network"))
+                raise RuntimeError("No Inday bar data source with valid config")
+            data_source = RealtimeDataSource(inday_bars=inday_bars, hist_source=data_source)
         if is_real_time:
             event_source = RealTimeEventSource(mod_config.fps, mod_config)
             # add persist

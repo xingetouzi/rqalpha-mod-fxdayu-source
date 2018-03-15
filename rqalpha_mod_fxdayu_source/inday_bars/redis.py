@@ -1,19 +1,17 @@
 from bisect import bisect_left, bisect_right
 from collections import OrderedDict
-from datetime import datetime, time
+from datetime import datetime
 
 import numpy as np
 from dateutil.parser import parse
-from rqalpha.data.base_data_source import BaseDataSource
 from rqalpha.data.converter import StockBarConverter
 from rqalpha.utils import Singleton
-from rqalpha.utils.datetime_func import convert_dt_to_int
+from rqalpha.utils.datetime_func import convert_int_to_datetime, convert_dt_to_int
 from rqalpha.utils.logger import system_log
 
-from rqalpha_mod_fxdayu_source.data_source.common import OddFrequencyDataSource
+from rqalpha_mod_fxdayu_source.inday_bars.base import AbstractIndayBars
 from rqalpha_mod_fxdayu_source.utils import InDayTradingPointIndexer
 
-EMPTY_BARS = None
 CONVERTER = StockBarConverter
 
 
@@ -124,7 +122,7 @@ class RedisBars(object):
     def end(self):
         return
 
-    def find(self, date, side="right"):
+    def find(self, date, side="left"):
         dts = self.index
         if side == "left":
             index = bisect_left(dts, date)
@@ -135,72 +133,20 @@ class RedisBars(object):
         return index
 
 
-class RedisDataSource(OddFrequencyDataSource, BaseDataSource):
-    def __init__(self, path, redis_url, datasource=None):
-        super(RedisDataSource, self).__init__(path)
+class RedisIndayBars(AbstractIndayBars):
+    def __init__(self, redis_url):
+        super(AbstractIndayBars, self).__init__()
         if not (redis_url.startswith("redis://") or redis_url.startswith("tcp://")):
             redis_url = "redis://" + redis_url.splits("//")[-1]
-        self._history_datasource = datasource
         system_log.info("Connected to Redis on: %s" % redis_url)
         self._client = RedisClient(redis_url)
 
-    def set_history_datasource(self, datasource):
-        self._history_datasource = datasource
-
-    def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
-        today = datetime.now().date()
+    def get_bars(self, instrument, frequency, trade_date=None, start_time=None, end_time=None):
+        start_time = 0 if start_time is None else start_time
+        end_time = 235959 if end_time is None else end_time
+        start_dt = convert_int_to_datetime(trade_date * 1000000 + start_time)
+        end_dt = convert_int_to_datetime(trade_date * 1000000 + end_time)
         bars = self._client.get(instrument.order_book_id, frequency)
-        history_bars = EMPTY_BARS
-        today_bars = EMPTY_BARS
-        if end_dt:
-            if end_dt.date() >= today:
-                idx_end = bars.find(end_dt, side="right")
-                if start_dt:
-                    if start_dt.date() > today or start_dt > end_dt:
-                        return EMPTY_BARS  # 确定控制的返回形式
-                    idx_start = bars.find(start_dt, side="left")
-                    if start_dt.date() < today:
-                        history_bars = self._history_datasource.raw_history_bars(
-                            instrument,
-                            frequency,
-                            start_dt,
-                            datetime.combine(today, time=time(hour=0, minute=0)),
-                            None
-                        )
-                elif length:
-                    idx_start = max(0, idx_end - length)
-                    left = max(0, length - idx_end)
-                    if left:
-                        history_bars = self._history_datasource.raw_history_bars(
-                            instrument,
-                            frequency,
-                            None,
-                            datetime.combine(today, time=time(hour=0, minute=0)),
-                            left
-                        )
-                today_bars = bars.bars(idx_start, idx_end)
-            else:
-                return self._history_datasource.raw_history_bars(instrument, frequency, start_dt, end_dt, length)
-        elif start_dt and length:
-            if start_dt.date() > today:
-                return EMPTY_BARS
-            elif start_dt.date() == today:
-                idx_start = bars.find(start_dt, side="left")
-                return bars.bars(idx_start, idx_start + length)
-            else:
-                history_bars = self._history_datasource.raw_history_bars(instrument, frequency, start_dt, end_dt,
-                                                                         length)
-                left = length - len(history_bars)
-                if left:
-                    today_bars = bars.bars(0, left)
-        if history_bars is not None and today_bars is not None:
-            return np.concatenate((history_bars, today_bars))
-        elif history_bars is not None:
-            return history_bars
-        else:
-            return today_bars
-
-    def available_data_range(self, frequency):
-        start, end = self._history_datasource.available_data_range(frequency)
-        end = datetime.now().date()
-        return start, end
+        start_pos = bars.find(start_dt)
+        end_pos = bars.find(end_dt)
+        return bars.bars(start_pos, end_pos)

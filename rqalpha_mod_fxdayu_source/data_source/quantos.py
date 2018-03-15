@@ -1,5 +1,4 @@
 import asyncio
-import os
 from datetime import date, datetime
 
 import numpy as np
@@ -11,9 +10,11 @@ from rqalpha.utils.datetime_func import convert_date_to_int, convert_int_to_date
 from rqalpha.utils.logger import system_log
 
 from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
-from rqalpha_mod_fxdayu_source.data_source.common import OddFrequencyDataSource
-from rqalpha_mod_fxdayu_source.utils import Singleton, DataFrameConverter
+from rqalpha_mod_fxdayu_source.data_source.common.odd import OddFrequencyBaseDataSource
+from rqalpha_mod_fxdayu_source.utils import Singleton
+from rqalpha_mod_fxdayu_source.utils.converter import QuantOsConverter
 from rqalpha_mod_fxdayu_source.utils.instrument import instrument_to_tushare
+from rqalpha_mod_fxdayu_source.utils.quantos import QuantOsDataApiMixin
 
 
 def parse_time_int(n):
@@ -39,17 +40,12 @@ def safe_searchsorted(a, v, side='left', sorter=None):
     return pos
 
 
-class QuantOsSource(OddFrequencyDataSource):
+class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
     __metaclass__ = Singleton
 
-    def __init__(self, path, api_url=None, phone=None, token=None):
+    def __init__(self, path, api_url=None, user=None, token=None):
         super(QuantOsSource, self).__init__(path)
-        from jaqs.data import DataApi
-        url = api_url or os.environ.get("QUANTOS_URL", "tcp://data.quantos.org:8910")
-        phone = phone or os.environ.get("QUANTOS_USER")
-        token = token or os.environ.get("QUANTOS_TOKEN")
-        self._api = DataApi(addr=url)
-        self._api.login(phone, token)
+        QuantOsDataApiMixin.__init__(self, api_url, user, token)
 
     def get_bar_count_in_day(self, instrument, frequency, trade_date=None, start_time=0, end_time=150000):
         """
@@ -97,7 +93,9 @@ class QuantOsSource(OddFrequencyDataSource):
 
     async def _get_bars_in_day(self, symbol, freq, trade_date, start_time=0, end_time=150000):
         # TODO retry when net error occurs
-        trade_date = trade_date.strftime("%Y-%m-%d")
+        trade_date = convert_date_to_int(trade_date) // 1000000
+        start_time = max(start_time, 80000)
+        end_time = min(end_time, 160000)
         return self._api.bar(symbol=symbol, freq=freq[:-1] + freq[-1].upper(), trade_date=trade_date,
                              start_time=start_time, end_time=end_time)
 
@@ -113,7 +111,8 @@ class QuantOsSource(OddFrequencyDataSource):
 
     def _filtered_dates(self, instrument):
         bars = self._filtered_day_bars(instrument)
-        return bars["datetime"]
+        dts = bars["datetime"]
+        return dts
 
     def raw_history_bars(self, instrument, frequency, start_dt=None, end_dt=None, length=None):
         symbol = instrument_to_tushare(instrument)
@@ -121,12 +120,12 @@ class QuantOsSource(OddFrequencyDataSource):
             if start_dt and end_dt:
                 s_date_int = convert_date_to_int(start_dt.date())
                 e_date_int = convert_date_to_int(end_dt.date())
-            elif start_dt:
+            elif start_dt and length:
                 dates = self._filtered_dates(instrument)
                 s_date_int = convert_date_to_int(start_dt.date())
                 s_pos = safe_searchsorted(dates, s_date_int)
                 e_date_int = int(dates[min(s_pos + length - 1, len(dates) - 1)])
-            elif end_dt:
+            elif end_dt and length:
                 dates = self._filtered_dates(instrument)
                 e_date_int = convert_date_to_int(end_dt.date())
                 e_pos = safe_searchsorted(dates, e_date_int)
@@ -137,15 +136,12 @@ class QuantOsSource(OddFrequencyDataSource):
                                         start_date=s_date_int // 1000000,
                                         end_date=e_date_int // 1000000)
             if isinstance(data, pd.DataFrame) and data.size:
-                data = data[data["volume"] > 0]
-                data["datetime"] = data["trade_date"].apply(
-                    lambda x: datetime(year=x // 10000, month=x // 100 % 100, day=x % 100, hour=15)
-                )
-                return DataFrameConverter.df2np(data)
+                data = data[data["volume"] > 0]  # TODO sikp_suspended?
+                return QuantOsConverter.df2np(data)
             else:
                 if msg:
                     system_log.warning(msg)
-                return DataFrameConverter.empty()
+                return QuantOsConverter.empty()
         else:
             tasks = []
             base_dict = {
@@ -198,19 +194,16 @@ class QuantOsSource(OddFrequencyDataSource):
                 extra_days = (max(length - e_bar_count, 0) - 1) // total_bar_count + 1
                 tasks.extend(map(
                     lambda x: dict(trade_date=convert_int_to_date(x), **base_dict),
-                    dates[max(e_pos - 1 - extra_days, 0): e_pos - 1]))
+                    dates[max(e_pos - extra_days, 0): e_pos]))
                 tasks.append(dict(trade_date=e_date, end_time=e_time, **base_dict))
                 post_handler = lambda x: x[-length:]
             else:
                 raise RuntimeError("At least two of [start_dt,end_dt,length] should be given.")
             data = post_handler(self._get_bars_in_day_parallel(tasks))
             if data is not None and data.size:
-                data["datetime"] = (data["trade_date"] * 1000000 + data["time"]).astype("int64").apply(
-                    lambda x: datetime.strptime(str(x), "%Y%m%d%H%M%S")
-                )
-                return DataFrameConverter.df2np(data)
+                return QuantOsConverter.df2np(data)
             else:
-                return DataFrameConverter.empty()
+                return QuantOsConverter.empty()
 
     def is_base_frequency(self, instrument, frequency):
         return frequency in ["1d", "1m", "5m", "15m"]

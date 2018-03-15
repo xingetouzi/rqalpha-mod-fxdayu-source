@@ -8,8 +8,9 @@ from rqalpha.model.instrument import Instrument
 from rqalpha.utils.py2 import lru_cache
 
 from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
-from rqalpha_mod_fxdayu_source.data_source.common import OddFrequencyDataSource
-from rqalpha_mod_fxdayu_source.utils import DataFrameConverter, Singleton
+from rqalpha_mod_fxdayu_source.data_source.common.odd import OddFrequencyBaseDataSource
+from rqalpha_mod_fxdayu_source.utils import Singleton
+from rqalpha_mod_fxdayu_source.utils.converter import DataFrameConverter
 
 INSTRUMENT_TYPE_MAP = {
     INSTRUMENT_TYPE.CS: "stock",
@@ -21,7 +22,7 @@ class NoneDataError(BaseException):
     pass
 
 
-class MongoDataSource(OddFrequencyDataSource):
+class MongoDataSource(OddFrequencyBaseDataSource):
     __metaclass__ = Singleton
 
     def __init__(self, path, mongo_url):

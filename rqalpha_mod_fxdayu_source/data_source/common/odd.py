@@ -3,9 +3,10 @@
 import pandas as pd
 from rqalpha.data.adjust import FIELDS_REQUIRE_ADJUSTMENT, adjust_bars
 from rqalpha.data.base_data_source import BaseDataSource
+from rqalpha.interface import AbstractDataSource
 from rqalpha.utils.datetime_func import convert_dt_to_int
 
-from rqalpha_mod_fxdayu_source.utils import DataFrameConverter
+from rqalpha_mod_fxdayu_source.utils.converter import DataFrameConverter
 
 RESAMPLE_TAG_MAP = {
     "m": "T",
@@ -20,11 +21,12 @@ TIME_TOLERANCE = {
 }
 
 
-class OddFrequencyDataSource(BaseDataSource):
+class OddFrequencyDataSource(AbstractDataSource):
     def __init__(self, *args, **kwargs):
         super(OddFrequencyDataSource, self).__init__(*args, **kwargs)
 
-    def _resample_bars(self, bars, frequency):
+    @staticmethod
+    def _resample_bars(bars, frequency):
         num = int(frequency[:-1])
         freq = frequency[-1]
         bar_data = DataFrameConverter.np2df(bars)
@@ -114,9 +116,25 @@ class OddFrequencyDataSource(BaseDataSource):
         return adjust_bars(bars, self.get_ex_cum_factor(instrument.order_book_id),
                            fields, adjust_type, adjust_orig)
 
+    def get_ex_cum_factor(self, order_book_id):
+        raise NotImplementedError
+
     def raw_history_bars(self, *args, **kwargs):
         raise NotImplementedError
 
     def is_base_frequency(self, instrument, freq):
         num = int(freq[:-1])
         return num == 1
+
+
+class CompleteAbstractDataSource(AbstractDataSource):
+    def is_st_stock(self, order_book_id, dates):
+        raise NotImplementedError
+
+    def is_suspended(self, order_book_id, dates):
+        raise NotImplementedError
+
+
+class OddFrequencyBaseDataSource(OddFrequencyDataSource, BaseDataSource):
+    def get_ex_cum_factor(self, order_book_id):
+        return BaseDataSource.get_ex_cum_factor(self, order_book_id)

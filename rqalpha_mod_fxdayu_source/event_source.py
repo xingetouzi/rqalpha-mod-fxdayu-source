@@ -3,6 +3,7 @@ import time
 import datetime
 import re
 from itertools import islice
+
 try:
     from Queue import Empty
 except ImportError:
@@ -12,7 +13,7 @@ from rqalpha.const import DEFAULT_ACCOUNT_TYPE
 from rqalpha.events import Event, EVENT
 from rqalpha.mod.rqalpha_mod_sys_simulation.simulation_event_source import SimulationEventSource
 from rqalpha.mod.rqalpha_mod_sys_stock_realtime.event_source import RealtimeEventSource
-from rqalpha.mod.rqalpha_mod_sys_stock_realtime.utils import is_holiday_today, is_tradetime_now
+from rqalpha.mod.rqalpha_mod_sys_stock_realtime.utils import is_holiday_today
 from rqalpha.utils.i18n import gettext as _
 from rqalpha.utils.logger import system_log
 
@@ -149,6 +150,15 @@ class IntervalEventSource(SimulationEventSource):
             raise NotImplementedError(_("Frequency {} is not support.").format(frequency))
 
 
+# NOTE: should call handle_bar at 13:00:00?
+def is_tradetime_now():
+    now_time = time.localtime()
+    now = (now_time.tm_hour, now_time.tm_min, now_time.tm_sec)
+    if (9, 15, 0) <= now <= (11, 30, 0) or (13, 1, 0) <= now <= (15, 0, 0):
+        return True
+    return False
+
+
 class RealTimeEventSource(RealtimeEventSource):
     def clock_worker(self):
         once_before_trading = False
@@ -161,9 +171,11 @@ class RealTimeEventSource(RealtimeEventSource):
 
             dt = datetime.datetime.now()
             next_dt = datetime.datetime.fromtimestamp((dt.timestamp() - 5) // self.fps * self.fps + self.fps)
+            # NOTE: In real time debug, comment below code block
             if next_dt > dt:
                 time.sleep(next_dt.timestamp() - dt.timestamp())
                 dt = datetime.datetime.now()
+            # END
             if dt.strftime("%H:%M:%S") >= "08:30:00" and dt.date() > self.before_trading_fire_date:
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
                 self.before_trading_fire_date = dt.date()
