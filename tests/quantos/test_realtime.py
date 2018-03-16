@@ -63,7 +63,6 @@ config = {
         "accounts": {"stock": 100000},
         "frequency": "1m",
         "benchmark": None,
-        "data_bundle_path": r"E:\Users\BurdenBear\.rqalpha\bundle",
         "strategy_file": __file__,
         "run_type": "p"
     },

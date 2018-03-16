@@ -36,7 +36,11 @@ def safe_searchsorted(a, v, side='left', sorter=None):
         raise RuntimeError("Can't search in a empty array!")
     pos = np.searchsorted(a, v, side=side, sorter=sorter)
     if pos >= len(a):
-        raise RuntimeError("Value to search [%s] beyond array range [ %s - %s ]" % (v, a[0], a[-1]))
+        system_log.warning(RuntimeWarning(
+            "Value to search [%s] beyond array range [ %s - %s ], there may be some data missing."
+            % (v, a[0], a[-1])
+        ))
+        return len(a)
     return pos
 
 
