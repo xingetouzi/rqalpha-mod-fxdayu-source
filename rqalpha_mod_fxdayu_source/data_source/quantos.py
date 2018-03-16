@@ -32,6 +32,7 @@ def bar_count_in_section(start, end, base=60, offset=0):
 
 
 def safe_searchsorted(a, v, side='left', sorter=None):
+    assert side in ["left", "right"]
     if not len(a):
         raise RuntimeError("Can't search in a empty array!")
     pos = np.searchsorted(a, v, side=side, sorter=sorter)
@@ -40,7 +41,7 @@ def safe_searchsorted(a, v, side='left', sorter=None):
             "Value to search [%s] beyond array range [ %s - %s ], there may be some data missing."
             % (v, a[0], a[-1])
         ))
-        return len(a) - 1
+        return len(a) - 1 if side == "left" else len(a)
     return pos
 
 
@@ -113,6 +114,7 @@ class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
                 raise RuntimeError(msg)
         return pd.concat(dfs, axis=0)
 
+    # TODO get filter_dates index from quantos and cache it.
     def _filtered_dates(self, instrument):
         bars = self._filtered_day_bars(instrument)
         dts = bars["datetime"]
@@ -128,12 +130,14 @@ class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
                 dates = self._filtered_dates(instrument)
                 s_date_int = convert_date_to_int(start_dt.date())
                 s_pos = safe_searchsorted(dates, s_date_int)
-                e_date_int = int(dates[min(s_pos + length - 1, len(dates) - 1)])
+                s_date_int = int(dates[s_pos])
+                e_date_int = int(dates[min(s_pos + length, len(dates)) - 1])
             elif end_dt and length:
                 dates = self._filtered_dates(instrument)
                 e_date_int = convert_date_to_int(end_dt.date())
-                e_pos = safe_searchsorted(dates, e_date_int)
-                s_date_int = int(dates[max(e_pos - length + 1, 0)])
+                e_pos = safe_searchsorted(dates, e_date_int, side="right")
+                s_date_int = int(dates[max(e_pos - length, 0)])
+                e_date_int = int(dates[e_pos - 1])
             else:
                 raise RuntimeError("At least two of [start_dt,end_dt,length] should be given.")
             data, msg = self._api.daily(symbol, freq=frequency, adjust_mode=None,
@@ -153,13 +157,14 @@ class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
                 "freq": frequency,
             }
             if start_dt and end_dt:
+                assert start_dt <= end_dt, "start datetime later then end datetime!"
                 s_date, s_time = start_dt.date(), start_dt.time()
                 e_date, e_time = end_dt.date(), end_dt.time()
                 s_date_int = convert_date_to_int(s_date)
                 e_date_int = convert_date_to_int(e_date)
                 dates = self._filtered_dates(instrument)
                 s_pos = safe_searchsorted(dates, s_date_int)
-                e_pos = safe_searchsorted(dates, e_date_int)
+                e_pos = safe_searchsorted(dates, e_date_int, side="right") - 1
                 if s_pos == e_pos:
                     tasks.append(dict(trade_date=convert_int_to_date(dates[s_pos]),
                                       start_time=s_time, end_time=e_time,
@@ -169,7 +174,7 @@ class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
                                       start_time=s_time, **base_dict))
                     tasks.extend(map(
                         lambda x: dict(trade_date=convert_int_to_date(x), **base_dict),
-                        dates[s_pos + 1: e_pos - 1]))
+                        dates[s_pos + 1: e_pos]))
                     tasks.append(dict(trade_date=convert_int_to_date(dates[e_pos]),
                                       end_time=e_time, **base_dict))
                 post_handler = lambda x: x
@@ -185,13 +190,13 @@ class QuantOsSource(OddFrequencyBaseDataSource, QuantOsDataApiMixin):
                 tasks.append(dict(trade_date=s_date, start_time=s_time, **base_dict))
                 tasks.extend(map(
                     lambda x: dict(trade_date=convert_int_to_date(x), **base_dict),
-                    dates[s_pos + 1: s_pos + extra_days + 1]))
+                    dates[s_pos + 1: s_pos + 1 + extra_days]))
                 post_handler = lambda x: x[:length]
             elif end_dt and length:
                 e_date, e_time = end_dt.date(), int(end_dt.strftime("%H%M%S"))
                 dates = self._filtered_dates(instrument)
                 e_date_int = convert_date_to_int(e_date)
-                e_pos = safe_searchsorted(dates, e_date_int)
+                e_pos = safe_searchsorted(dates, e_date_int, side="right") - 1
                 e_bar_count = self.get_bar_count_in_day(instrument, frequency,
                                                         trade_date=e_date, end_time=e_time)
                 total_bar_count = self.get_bar_count_in_day(instrument, frequency)

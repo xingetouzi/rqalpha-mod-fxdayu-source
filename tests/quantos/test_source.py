@@ -38,9 +38,13 @@ class TestQuantOsDataSource(unittest.TestCase):
 
     @lru_cache(None)
     def get_stock(self):
+        date = self.get_last_trading_date()
         for i in self.source.get_all_instruments():
             if i.enum_type == INSTRUMENT_TYPE.CS:
-                return i
+                if not self.source.is_suspended(i.order_book_id, [date]):
+                    return i
+
+        raise RuntimeError("Data is missing!")
 
     @lru_cache(None)
     def get_letv(self):
@@ -59,7 +63,7 @@ class TestQuantOsDataSource(unittest.TestCase):
         return result
 
     @lru_cache(None)
-    def get_last_trading_day(self):
+    def get_last_trading_date(self):
         dates = self.source.get_trading_calendar()
         d = dates[np.searchsorted(dates, datetime.now()) - 2]
         return datetime.combine(d, time=time(hour=15))
@@ -79,7 +83,7 @@ class TestQuantOsDataSource(unittest.TestCase):
 
     def test_get_bar(self):
         instrument = self.get_stock()
-        dt = self.get_last_trading_day()
+        dt = self.get_last_trading_date()
         a1 = self.source.get_bar(instrument, dt, "1d")
         print(a1)
         a2 = self.source.get_bar(instrument, dt, "1m")
@@ -90,7 +94,7 @@ class TestQuantOsDataSource(unittest.TestCase):
     def test_stock(self):
         fields = ["datetime", "close", "low", "high", "open", "volume"]
         instrument = self.get_stock()
-        dt = self.get_last_trading_day()
+        dt = self.get_last_trading_date()
         for l, f in itertools.product(lengths, frequencies):
             data = self.source.history_bars(instrument, l, f, fields, dt, adjust_type=None)
             df = pd.DataFrame(data)
@@ -114,7 +118,7 @@ class TestQuantOsDataSource(unittest.TestCase):
     def test_index(self):
         fields = ["datetime", "close", "low", "high", "open", "volume"]
         instruments = self.get_indexes()
-        dt = datetime(year=2018, month=1, day=24, hour=15)
+        dt = self.get_last_trading_date()
         for i, l, f in itertools.product(instruments, lengths, frequencies):
             data = self.source.history_bars(i, l, f, fields, dt, adjust_type=None)
             df = pd.DataFrame(data)
