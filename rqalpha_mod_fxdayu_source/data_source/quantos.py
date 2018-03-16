@@ -40,7 +40,7 @@ def safe_searchsorted(a, v, side='left', sorter=None):
             "Value to search [%s] beyond array range [ %s - %s ], there may be some data missing."
             % (v, a[0], a[-1])
         ))
-        return len(a)
+        return len(a) - 1
     return pos
 
 
