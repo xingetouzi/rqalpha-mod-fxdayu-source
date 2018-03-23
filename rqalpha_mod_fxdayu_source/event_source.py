@@ -172,9 +172,9 @@ class RealTimeEventSource(RealtimeEventSource):
             dt = datetime.datetime.now()
             next_dt = datetime.datetime.fromtimestamp((dt.timestamp() - 5) // self.fps * self.fps + self.fps)
             # NOTE: In real time debug, comment below code block
-            if next_dt > dt:
-                time.sleep(next_dt.timestamp() - dt.timestamp())
-                dt = datetime.datetime.now()
+            # if next_dt > dt:
+            #     time.sleep(next_dt.timestamp() - dt.timestamp())
+            #     dt = datetime.datetime.now()
             # END
             if dt.strftime("%H:%M:%S") >= "08:30:00" and dt.date() > self.before_trading_fire_date:
                 self.event_queue.put((dt, EVENT.BEFORE_TRADING))
