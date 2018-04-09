@@ -1,20 +1,20 @@
 # encoding: utf-8
-import asyncio
 from datetime import date, datetime, time
 
+import motor.motor_asyncio
 import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 from rqalpha.const import INSTRUMENT_TYPE
 from rqalpha.model.instrument import Instrument
-from rqalpha.utils.datetime_func import convert_date_to_int, convert_int_to_datetime
+from rqalpha.utils.datetime_func import convert_date_to_int
 from rqalpha.utils.py2 import lru_cache
-import motor.motor_asyncio
 
 from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
 from rqalpha_mod_fxdayu_source.data_source.common.minite import MiniteBarDataSourceMixin
 from rqalpha_mod_fxdayu_source.data_source.common.odd import OddFrequencyBaseDataSource
 from rqalpha_mod_fxdayu_source.utils import Singleton
+from rqalpha_mod_fxdayu_source.utils.asyncio import get_asyncio_event_loop
 from rqalpha_mod_fxdayu_source.utils.converter import DataFrameConverter
 
 INSTRUMENT_TYPE_MAP = {
@@ -83,7 +83,7 @@ class MongoDataSource(OddFrequencyBaseDataSource, MiniteBarDataSourceMixin):
         collection = instrument.order_book_id
         filters = {"_d": {"$gte": datetime.combine(s_date, time=time()), "$lte": datetime.combine(e_date, time=time())}}
         projection = {"_id": 0, "_d": 0}
-        loop = asyncio.get_event_loop()
+        loop = get_asyncio_event_loop()
         bars = loop.run_until_complete(self._do_get_bars(db, collection, filters, projection))
         if bars is not None and bars.size:
             bars = DataFrameConverter.df2np(bars)

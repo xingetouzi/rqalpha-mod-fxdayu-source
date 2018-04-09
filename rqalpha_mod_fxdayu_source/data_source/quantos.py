@@ -11,6 +11,7 @@ from rqalpha_mod_fxdayu_source.data_source.common import CacheMixin
 from rqalpha_mod_fxdayu_source.data_source.common.minite import safe_searchsorted, MiniteBarDataSourceMixin
 from rqalpha_mod_fxdayu_source.data_source.common.odd import OddFrequencyBaseDataSource
 from rqalpha_mod_fxdayu_source.utils import Singleton
+from rqalpha_mod_fxdayu_source.utils.asyncio import get_asyncio_event_loop
 from rqalpha_mod_fxdayu_source.utils.converter import QuantOsConverter
 from rqalpha_mod_fxdayu_source.utils.instrument import instrument_to_tushare
 from rqalpha_mod_fxdayu_source.utils.quantos import QuantOsDataApiMixin
@@ -33,7 +34,7 @@ class QuantOsSource(OddFrequencyBaseDataSource, MiniteBarDataSourceMixin, QuantO
                              trade_date=trade_date, start_time=start_time, end_time=end_time)
 
     def _get_bars_in_days(self, instrument, frequency, days):
-        loop = asyncio.get_event_loop()
+        loop = get_asyncio_event_loop()
         tasks = [self._get_bars_in_day(instrument=instrument, frequency=frequency, **day) for day in days]
         results = loop.run_until_complete(asyncio.gather(*tasks))
         dfs, msgs = zip(*results)
