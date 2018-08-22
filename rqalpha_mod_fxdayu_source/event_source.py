@@ -152,9 +152,10 @@ class IntervalEventSource(SimulationEventSource):
 
 # NOTE: should call handle_bar at 13:00:00?
 def is_tradetime_now():
-    now_time = time.localtime()
-    now = (now_time.tm_hour, now_time.tm_min, now_time.tm_sec)
-    if (9, 15, 0) <= now <= (11, 30, 0) or (13, 1, 0) <= now <= (15, 0, 0):
+    # FIX unknown fatal error due to call time.localtime
+    now_time = datetime.datetime.now()
+    now = now_time.strftime("%H%M")
+    if "0915" <= now <= "1130" or "1301" <= now <= "1500":
         return True
     return False
 
@@ -164,7 +165,6 @@ class RealTimeEventSource(RealtimeEventSource):
         once_before_trading = False
         while True:
             # time.sleep(self.fps)
-
             if is_holiday_today():
                 time.sleep(60)
                 continue
@@ -199,7 +199,7 @@ class RealTimeEventSource(RealtimeEventSource):
             dt = datetime.datetime.now()
             if next_dt.timestamp() + self.fps > dt.timestamp():
                 time.sleep(next_dt.timestamp() + self.fps - dt.timestamp())
-
+       
     def events(self, start_date, end_date, frequency):
         running = True
 
