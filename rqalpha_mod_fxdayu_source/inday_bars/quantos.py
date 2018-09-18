@@ -31,7 +31,8 @@ class QuantOsIndayBars(AbstractIndayBars, QuantOsDataApiMixin):
                 freq = frequency[:-1] + frequency[-1].upper()
                 params = dict(symbol=symbol, freq=freq, trade_date=0, **kwargs)
                 bars, msg = self._api.bar(**params)
-                if not isinstance(bars, pd.DataFrame):
+                code = msg.split(",")[0]
+                if not isinstance(bars, pd.DataFrame) or code != "0":
                     raise QuantOsQueryError(msg)
                 else:
                     break
