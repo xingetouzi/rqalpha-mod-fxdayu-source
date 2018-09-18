@@ -119,7 +119,7 @@ strategy.py
 ============================= ==============================  ================= =======================================
 选项                           默认值                           适用数据源类型       含义
 ============================= ==============================  ================= =======================================
-fxdayu_source.enabled         "mongo"                         通用               行情源类型,可选值为"mongo","bundle","quantos"
+fxdayu_source.enabled         "quantos"                       通用              行情源类型,可选值为"mongo","bundle","quantos"
 fxdayu_source.bundle_path     None                            bundle            bundle数据文件位置，默认取"~/.fxdayu/bundle", 可以用环境变量覆盖，取值为"$FXDAYU_ROOT/bundle"
 fxdayu_source.mongo_url       "mongodb://localhost:27017"     mongo             mongodb数据库地址
 fxdayu_source.enable_cache    True                            通用               bool型，是否开启分页读取缓存优化功能(缓存优化适用于回测)。

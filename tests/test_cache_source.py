@@ -1,3 +1,4 @@
+import os
 import pathlib
 import unittest
 from datetime import datetime, timedelta
@@ -12,8 +13,8 @@ from rqalpha_mod_fxdayu_source.data_source.mongo import MongoCacheDataSource
 class mytest(unittest.TestCase):
     # 初始化工作
     def setUp(self):
-        self.path = str(pathlib.Path("e:/Users/BurdenBear/.rqalpha/bundle"))
-        self.mongo_url = "mongodb://192.168.0.103:30000"
+        self.path = pathlib.Path("~/.rqalpha/bundle").expanduser()
+        self.mongo_url = os.environ.get("MONGO_URL")
         self._instrument = MongoCacheDataSource(self.path, self.mongo_url).get_all_instruments()[0]
 
     # 退出清理工作

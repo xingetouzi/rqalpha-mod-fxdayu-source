@@ -76,7 +76,7 @@ class FxdayuSourceMod(AbstractMod):
         else:
             event_source = IntervalEventSource(env)
         env.set_data_source(data_source)
-        # a patch to start_date since it's real time mod
+        # a patch to start_date allowed it to be setted large than last trade date.
         if env.config.base.start_date == datetime.now().date():
             trading_dates = data_source.get_trading_calendar()
             pos = trading_dates.searchsorted(env.config.base.start_date)
